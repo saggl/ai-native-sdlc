@@ -1,17 +1,14 @@
-# AI-native SDLC plugin
+# AI-native SDLC
 
-This repository distributes a Claude Code plugin used in other projects.
-Read README.md and plugins/sdlc/references/workflow.md. Canonical runtime assets live
-entirely in plugins/sdlc; the marketplace points to that self-contained directory.
+This repository has one job: distribute the smallest useful Claude Code plugin for:
 
-Python 3.10+, Git, standard library only.
-- Validate: python3 scripts/validate.py
-- Test: python3 -m unittest discover -s tests -v
+`intent.md → spec.md → plan.md → implementation`
 
-Keep the main user path /sdlc:start. Do not add routine manual setup steps or duplicate
-lifecycle commands. Preserve existing project data on setup/updates. Test actual Git,
-resume, stale evidence and filesystem boundaries when changing the helper.
+Keep:
+- one user command: `/sdlc:start`
+- three artifact templates
+- no runtime helper, database, project config, or duplicate workflow state
 
-Local records and skills are not authenticated approval enforcement. Report unavailable
-checks honestly. Examples stay illustrative. Run relevant evals/README.md scenarios for
-workflow changes and state whether a real Claude Code runtime was exercised.
+Prefer deleting complexity over documenting it. Add a new mechanism only after a real workflow need cannot be solved by the existing artifacts, Git, or the target repository's own tooling.
+
+Smoke-test changes by installing the plugin in a disposable repository and running one change through all three approvals and implementation.

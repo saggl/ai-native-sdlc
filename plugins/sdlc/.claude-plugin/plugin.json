@@ -1,7 +1,7 @@
 {
   "name": "sdlc",
-  "version": "0.2.0",
-  "description": "A guided, resumable AI-native SDLC for your own repositories.",
+  "version": "0.3.0",
+  "description": "Intent → Spec → Plan → Code. A minimal AI-native SDLC workflow.",
   "author": {"name": "Christian Sagstetter"},
   "repository": "https://github.com/saggl/ai-native-sdlc"
 }

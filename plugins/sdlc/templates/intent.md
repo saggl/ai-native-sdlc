@@ -1,10 +1,18 @@
-# Intent: [[SDLC_TITLE]]
+# Intent: <change>
 
-## Problem and outcome
-<!-- SDLC: Who is affected, what is wrong today, what should become possible, and how will we know? -->
+Status: draft
 
-## Scope and constraints
-<!-- SDLC: Included, excluded, affected systems, source issue, and actual constraints. -->
+## Problem
+What is wrong or missing today?
 
-## Open decisions
-<!-- SDLC: List decision, owner and whether it blocks progress; write None when resolved. -->
+## Outcome
+What should be true when this is solved?
+
+## Affected users and systems
+Who or what is affected?
+
+## Constraints
+What must remain true?
+
+## Open questions
+Only unresolved questions that can change the solution.

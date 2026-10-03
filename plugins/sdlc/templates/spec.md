@@ -1,15 +1,15 @@
-# Specification: [[SDLC_TITLE]]
+# Spec: <change>
 
-Source: [intent](intent.md)
+Status: draft
 
-## Behavior and boundaries
-<!-- SDLC: Inputs, outputs, preserved behavior, failure cases, interfaces and applied policies. -->
+## Requirements
+What must the solution do?
 
-## Acceptance criteria
-<!-- SDLC: Use stable AC-1, AC-2 identifiers with observable expected outcomes, including failures. -->
+## Design
+The smallest design that satisfies the intent.
 
-## Delivery and success
-<!-- SDLC: What counts as delivered; rollback route; outcome signal, source, observation window and owner. -->
+## Acceptance
+Observable conditions that prove the requirements are met.
 
-## Concerns and decisions
-<!-- SDLC: Risks, conflicting policies and unresolved decisions with owners; write None when resolved. -->
+## Concerns
+Only risks, trade-offs, or unresolved decisions that need attention.

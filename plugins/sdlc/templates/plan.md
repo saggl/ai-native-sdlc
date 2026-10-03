@@ -1,17 +1,15 @@
-# Plan: [[SDLC_TITLE]]
+# Plan: <change>
 
-Sources: [intent](intent.md), [spec](spec.md)
+Status: draft
 
-## Approach and files
-<!-- SDLC: Chosen design, real files/components, alternatives and what could break. -->
+## Changes
+Files or components that will change and why.
 
-## Steps
-<!-- SDLC: Ordered implementation and feedback loop; failure reproduction first for bug fixes. -->
+## Order
+The implementation sequence.
 
-## Verification
-| Criterion | Check and expected result | Environment |
-| --- | --- | --- |
-<!-- SDLC: Map every acceptance criterion to a meaningful check. -->
+## Risks
+What could break or needs extra care?
 
-## Delivery and recovery
-<!-- SDLC: Existing PR/CI/release process, authorization and rollback; no invented commands. -->
+## Proof
+Tests, builds, checks, or observations that demonstrate the change works.

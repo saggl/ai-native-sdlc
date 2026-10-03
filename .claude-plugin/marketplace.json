@@ -5,7 +5,7 @@
     {
       "name": "sdlc",
       "source": "./plugins/sdlc",
-      "description": "Describe a change. Approve the decisions. Let Claude carry the work through verification and delivery."
+      "description": "Intent → Spec → Plan → Code. A minimal AI-native SDLC workflow for Claude Code."
     }
   ]
 }
