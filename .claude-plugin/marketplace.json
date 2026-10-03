@@ -1,0 +1,11 @@
+{
+  "name": "ai-native-sdlc",
+  "owner": {"name": "Christian Sagstetter"},
+  "plugins": [
+    {
+      "name": "sdlc",
+      "source": "./plugins/sdlc",
+      "description": "Describe a change. Approve the decisions. Let Claude carry the work through verification and delivery."
+    }
+  ]
+}
