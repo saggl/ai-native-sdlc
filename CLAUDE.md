@@ -1,10 +1,17 @@
-# Starter repository instructions
-This repository packages an AI SDLC workflow, templates and four Claude Code project skills.
-Read README.md and .sdlc/workflow.md. Canonical templates live in .sdlc/templates.
-Use Python 3.10+; no third-party dependencies are needed for package scripts.
-Validation: python3 scripts/validate.py
-Tests: python3 -m unittest discover -s tests -v
-Keep skills and templates consistent; test the installer when changing package layout.
-Do not claim that structural validation enforces human approval or semantic correctness.
-Do not silently change example documents from illustrative draft to approved.
-For workflow changes, run the relevant manual evaluations in evals/README.md.
+# AI-native SDLC plugin
+
+This repository distributes a Claude Code plugin used in other projects.
+Read README.md and plugins/sdlc/references/workflow.md. Canonical runtime assets live
+entirely in plugins/sdlc; the marketplace points to that self-contained directory.
+
+Python 3.10+, Git, standard library only.
+- Validate: python3 scripts/validate.py
+- Test: python3 -m unittest discover -s tests -v
+
+Keep the main user path /sdlc:start. Do not add routine manual setup steps or duplicate
+lifecycle commands. Preserve existing project data on setup/updates. Test actual Git,
+resume, stale evidence and filesystem boundaries when changing the helper.
+
+Local records and skills are not authenticated approval enforcement. Report unavailable
+checks honestly. Examples stay illustrative. Run relevant evals/README.md scenarios for
+workflow changes and state whether a real Claude Code runtime was exercised.

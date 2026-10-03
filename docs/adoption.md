@@ -1,35 +1,74 @@
-# Adoption guide
+# Adopt the plugin
 
-## What changes
-Today: plan in chat, generate code, review the diff; decisions disappear with the session.
-Pilot: save and approve intent/spec/plan, build against them, review evidence and deviations.
-A code review remains necessary; upstream approval cannot guarantee correct implementation.
+## First real task
 
-## Responsibilities
-| Decision | Accountable role |
+Install as described in the root README. In an existing repository run `/sdlc:start`
+with a small real change. Claude discovers commands and policies, asks only for missing
+blocking decisions and creates project context. Keep the generated artifacts in Git.
+
+For a new project, start in an empty Git repository. Claude can capture intent before
+application code exists; approve the desired behavior and approach before implementation.
+
+No service account, hosted MCP server, API key, monitoring service or new project template
+is required for guided use. Existing CLI/MCP integrations remain usable.
+
+## Team use
+
+Use the plugin manager's project scope when the repository should recommend the plugin
+to its collaborators. From a terminal in that project:
+
+```bash
+claude plugin marketplace add saggl/ai-native-sdlc
+claude plugin install sdlc@ai-native-sdlc --scope project
+```
+
+Review and commit the generated project plugin settings. Each collaborator still needs
+repository access and a local install. The marketplace repository is private; distribute
+access or mirror the package into an approved internal marketplace before wider rollout.
+Do not change repository visibility as a side effect of installation.
+
+| Decision | Responsible person |
 | --- | --- |
-| Value and scope | Product owner or project owner |
-| Required behavior | Owner with relevant domain experts |
-| Technical approach and checks | Responsible engineer; tech lead for material risk |
-| Implementation and feedback loop | Engineer directing Claude |
-| Merge | Authorized human reviewer under project policy |
-| Release | Existing release owner/process |
+| Scope/value | Product or project owner |
+| Behavior and constraints | Owner with relevant domain experts |
+| Approach and verification | Engineer; technical lead for material risk |
+| Merge and release | Existing project authority |
+| Observed outcome and follow-up | Product/service owner |
 
-The owner need not approve every routine detail. Assign roles for the actual project.
+One person may hold multiple roles. Record the actual decision; do not invent independent
+approval. Use protected PR reviews or the existing decision system where required.
 
-## First five changes
-1. Install a pinned package and validate generated project instructions.
-2. Select a bounded feature; prepare it manually and resolve questions.
-3. Record staged decisions on one preparation PR, tied to the reviewed revision.
-4. Implement separately; gather tests, review findings and explicit deviations.
-5. Review evidence and sensitive code, then make the human merge decision.
-Repeat and measure preparation effort, rework avoided, review time and escaped defects.
-Use compact change.md only when the change is truly bounded and low risk.
+## Updates
 
-## Ongoing maintenance
-Maintain README/CLAUDE/REVIEW as current project guidance. Preserve per-change documents
-as historical decisions; mark superseded decisions with links rather than deleting history.
-Add domain-specific skills only for repeated institutional knowledge. Embedded constraints
-belong in project rules/specs and verification environments, not in invented generic limits.
-Automate transitions after the manual workflow is useful. Later additions may include
-protected hooks, headless CI jobs, agent evals and incident-triggered intent creation.
+From a terminal:
+
+```bash
+claude plugin marketplace update ai-native-sdlc
+claude plugin update sdlc@ai-native-sdlc
+```
+
+Use `/reload-plugins` or a new session to load the update. The publisher must bump
+`plugins/sdlc/.claude-plugin/plugin.json` when releasing changes. Roll out a tested version
+through your approved marketplace/ref for controlled team use. Project decisions and
+`.sdlc/project.json` are not part of the plugin cache and are never overwritten by updates.
+
+## Migration from 0.1
+
+See the bundled [migration instructions](../plugins/sdlc/references/migrate.md).
+Do not keep both the old copied skills and the new plugin active. Preserve existing change
+artifacts and instructions. Legacy work is not retroactively marked approved by migration.
+
+## Extend only where the project needs it
+
+Put stable project rules in CLAUDE.md and policy files; keep reusable domain expertise in
+separate project/company skills. Link authoritative Jira/Polarion/Teamcenter records from
+the change artifacts rather than duplicating their complete content. A CI adapter can
+use the same artifacts and evidence; it must verify actual authorization independently.
+
+For Python, discover the actual test/environment tooling. For embedded work, distinguish
+host tests, cross-compilation, simulation and target/HIL proof. An absent target leaves its
+criterion unverified. A firmware release can use an artifact handoff as its delivery boundary.
+
+Across the first five real tasks, measure time to approved intent, human review time,
+rework, missing evidence and whether another session can resume correctly. Add failure
+cases to the eval suite. Expand to event triggers and monitoring only once this works.

@@ -1,17 +1,10 @@
-## Purpose and change folder
-Link the intent/spec/plan or compact change.md.
+## Problem and resulting behavior
 
-## PR type
-Preparation / implementation / shared workflow update.
+## Decisions and artifacts
+Link the change folder and actual approval evidence. State which decisions remain open.
 
-## Approval evidence
-Human decision references and exact reviewed preparation revision. Draft if absent.
+## Validation
+Observed tests/evals and limitations, including whether Claude Code was exercised.
 
-## Verification
-Acceptance-criterion evidence, commands/results and unrun checks.
-
-## Deviations and risk
-Scope/behavior changes, renewed approval links and residual risks.
-
-## Review
-Link review findings and fixes. Human merge approval remains separate.
+## Deviations and risks
+Material changes, compatibility/migration and pending external evidence.

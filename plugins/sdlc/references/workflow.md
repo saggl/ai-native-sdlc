@@ -1,0 +1,63 @@
+# Workflow contract
+
+Use Python 3.10+ and Git. Select `python3`, `python`, or `py -3` by checking the local
+interpreter. If unavailable, explain the missing prerequisite. Do not install it silently.
+Invoke the bundled helper using its absolute path and the target Git root:
+
+```text
+python3 "<plugin-root>/scripts/sdlc.py" --root "<project-root>" status
+```
+
+`<plugin-root>` is the resolved `${CLAUDE_PLUGIN_ROOT}` from the calling skill, not a
+literal environment variable inside this reference. Quote arguments safely; treat user
+text as arguments, never interpolate it as executable shell code.
+
+## Helper operations (Claude runs these)
+
+| Operation after `--root <project-root>` | Effect |
+| --- | --- |
+| `setup` | Create `.sdlc/project.json` once; preserve existing content |
+| `new <id> --title <title>` | Create a unique change folder, state and intent template |
+| `status [id]` | Infer next stage; check saved artifact and evidence fingerprints |
+| `draft <id> spec` / `draft <id> plan` | Create the next template after prior decisions |
+| `record-approval <id> <intent\|spec\|plan> --by <human> --evidence <reference> --decision <exact-decision>` | Record a real human decision on committed artifacts |
+| `record-result <id> <verification\|review\|delivery\|learning> --outcome <passed\|blocked> --report <relative-path>` | Bind a report to the code and upstream artifacts |
+
+Reports are named `verification.md`, `review.md`, `delivery.md`, `learning.md` in that
+change's folder. Render them from the corresponding bundled template. Commit the
+artifacts and records at handoffs, using explicitly scoped staging; preserve unrelated
+work. A new repo can start with no commits; reviewed artifacts must be committed before
+an approval is recorded. Git history, not a shared example project, holds the decisions.
+
+## Rules shared by every stage
+
+- Humans own intent, behavior, approach and release judgment. One person can hold
+  several roles. Ask only the responsible person for the decision needed now.
+- Use the existing repository workflow. A single change branch/PR can contain the
+  artifact commits followed by implementation; separate preparation PRs are optional.
+- Approval records store the person's decision, evidence reference, time, commit and
+  SHA-256 of artifacts/policies. They detect stale content; they do not authenticate
+  identity. For team gates use retrievable PR reviews or the team's approval system.
+  For a solo project use the actual explicit chat decision and identify it as such.
+- No self-approval. No checkbox, commit author, generated status or Git merge alone is
+  evidence of a human's intended decision. Resolve inaccessible evidence before proceeding.
+- Changing an upstream artifact or policy invalidates downstream records. Keep history
+  and obtain the changed decision. A result also becomes stale when Git-visible code,
+  its report, or earlier result records change. Never silently repair fingerprints.
+- Commit implementation before final verification/result recording; the helper rejects
+  uncommitted or untracked product files and binds results to the committed code as well
+  as working files. Evidence-only commits do not invalidate results.
+- Results record observed evidence, not guarantees. A `passed` result requires that
+  stage's required checks, independent review or observed delivery actually passed.
+- Stop when a required environment/check is unavailable. Record `blocked` with the
+  specific missing evidence; no green status based only on an agent's assurance.
+- Workflow data lives in the configured changes directory; product code must not live
+  there. Git-ignored/generated outputs are not fingerprinted: reference CI/build IDs
+  and target evidence where needed. Submodule result capture requires a project adapter.
+- Work on one change per worktree/session. Never overwrite another session's state.
+- After learning closes a change, it is a historical record. New incidents start a
+  linked new intent; they do not rewrite the previous change's approved history.
+
+Skills and local files are guidance, not a security boundary. Server-side branch rules,
+required checks, protected environments and permissions remain authoritative. This
+plugin installs no hooks, background jobs, model keys, auto-merge or deployment access.

@@ -1,22 +1,13 @@
 # Review policy
-## Inputs
-Approved intent, spec, plan, implementation diff and test results.
-Read .sdlc/workflow.md for approval and deviation rules.
-## Review areas
-Behavior and acceptance criteria; logic and edge cases; security;
-compatibility and project constraints; meaningful verification;
-changes to tests and deviations from the approved baseline.
-## Severity rules
-Blocker: incorrect behavior, exploitable vulnerability, violated required constraint,
-or missing evidence for a required acceptance criterion.
-Advisory: maintainability or clarity improvements without demonstrated failure.
-Nit: optional style issues; report at most five. Skip what deterministic CI already covers.
-## Finding format
-Severity, location, problem, impact and evidence. Separate suspicions from demonstrated failures.
-## Review output
-Use .sdlc/templates/review-report.md. Map every acceptance criterion to evidence.
-State unresolved findings, deviations, unverified behavior and required human decisions.
-The agent recommends; a human makes the merge decision.
 
-## Starter-specific checks
-Check template/skill consistency, installation safety, source provenance and truthful enforcement claims.
+Review the request, approved decisions where present, full diff and verification evidence.
+For this plugin check installable layout, simple first use, resumption without old chat,
+project-data preservation, decision provenance, stale evidence and six-stage coverage.
+
+Block on broken behavior, data loss, unsupported runtime claims, fabricated authorization,
+weakened checks or an unverified required acceptance criterion. Report specific evidence,
+impact and location. Distinguish model guidance, bookkeeping and real server-side gates.
+
+Check that only plugin-contained resources are required after installation. Keep setup
+idempotent and credentials out of the package. Review changes to instructions and tests
+as carefully as executable code. Report optional improvements separately; cap nits at five.

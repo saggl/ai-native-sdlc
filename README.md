@@ -1,69 +1,100 @@
-# AI-native SDLC starter
+# AI-native SDLC
 
-A practical, versioned workflow for teams already planning, implementing, reviewing and
-fixing code with Claude Code. Preserve intent and decisions, approve behavior and approach
-before implementation, and review delivered evidence before merging.
+**Describe the change. Approve the decisions. Let Claude carry the work forward.**
 
-This repository contains a proposed adaptation of Anthropic's playbook, not an official
-Anthropic package. It starts with manual gates; human PR approval remains in place.
+A Claude Code plugin you use inside your own projects. It saves the intent, specification,
+plan and evidence in Git, guides you through the human decisions, and resumes where you
+left off. Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook).
 
-## Start in this repository
-Open it in Claude Code and use `/sdlc-prepare <your next change>`.
-The four project skills are in `.claude/skills`. Start with a real small change rather
-than designing an entire future product.
+## Install once
 
-## Install into another repository
-Use Python 3.10+ and a clean, pinned checkout of this starter. From its root:
-
-```bash
-git rev-parse HEAD
-python3 scripts/install.py /absolute/path/to/target-repository
-```
-
-The installer copies shared templates, workflow and all four skills. It refuses collisions
-and does not change existing root instructions. It records the source commit and file hashes.
-Commit the installed files in the target repository. Then in Claude Code:
+In Claude Code:
 
 ```text
-/sdlc-init
-/sdlc-prepare Add the first useful capability
+/plugin marketplace add saggl/ai-native-sdlc
+/plugin install sdlc@ai-native-sdlc
 ```
 
-After human approval of the saved preparation revision:
+Use a current Claude Code with plugin support, Git and Python 3.10+. The repository is
+currently private: installation requires Git access to it. Open a new session or use
+`/reload-plugins` after installation if the commands are not yet visible.
+
+## Use in your project
+
+Open Claude Code in the repository you actually work on:
 
 ```text
-/sdlc-implement changes/001-first-capability
+/sdlc:start Add CSV import with clear errors for invalid rows
 ```
 
-In a fresh Claude Code session:
+Claude inspects the project, sets up its context, and starts the change. You describe the
+problem and review the decisions. Claude writes the documents and runs the workflow.
 
-```text
-/sdlc-review changes/001-first-capability
-```
-
-These commands guide agents; they do not install repository permissions or approval gates.
-
-## Contents
-| Location | Purpose |
+| You do | Claude does |
 | --- | --- |
-| `.sdlc/templates/` | Six core document templates, compact change and review report |
-| `.claude/skills/` | Init, prepare, implement and review skills |
-| [.sdlc/workflow.md](.sdlc/workflow.md) | Roles, approvals, deviations, reuse and pilot rollout |
-| [docs/adoption.md](docs/adoption.md) | Practical adoption and responsibility mapping |
-| [examples/001-csv-validation](examples/001-csv-validation/intent.md) | Filled illustrative intent/spec/plan |
-| [evals/README.md](evals/README.md) | Manual scenarios for checking skill behavior |
-| `scripts/` | Safe initial installer and structural package validation |
-| `.github/` | PR template and package validation workflow |
+| Explain the problem | Save a concise `intent.md` |
+| Approve the intent | Inspect the code and draft `spec.md` |
+| Approve the required behavior | Draft `plan.md`, including checks and risks |
+| Approve the approach | Implement, test, fix and obtain a fresh review |
+| Make the required release decision | Work through existing PR/CI/release tools and record delivery |
+| Review the observed outcome | Capture learning and route follow-up work into a new intent |
 
-## Validate this package
+Each approval concerns the saved artifact you just reviewed. Claude records it and
+continues; you do not need another command between stages. Small fixes get short
+artifacts. Larger changes get the detail their decisions need.
+
+Tomorrow, or in a fresh session:
+
+```text
+/sdlc:start
+```
+
+It resumes the open change. If several are open, it asks which one. For a quick progress
+check, use `/sdlc:status`. A fresh reviewer can use `/sdlc:review <change-id>`.
+
+## What stays in your project
+
+- `.sdlc/project.json`: project commands, policies, owners and delivery context.
+- `changes/<change-id>/`: intent, spec, plan, human decision records and observed evidence.
+- Small relevant additions to project instructions, preserving your existing rules.
+
+The shared skills, templates and helper stay in the installed plugin. Update them once
+through the plugin manager; each project's decisions and custom instructions stay put.
+Nothing in this repository needs to become your application's starting code.
+
+## What this version delivers
+
+**Version 0.2 is a guided lifecycle.** It includes automatic setup, resumable stages,
+checks for changed approval/evidence inputs, a fresh reviewer, and instructions through
+delivery and observation. It works with the project's available engineering tools and
+verification environments, including Python and embedded projects.
+
+The helper records evidence; it does not authenticate approvals, judge correctness or
+replace repository permissions. Required target tests remain pending until run on the
+target. Actual merging, releasing and observation depend on the project's tools and
+authorization. Background monitoring, event-triggered agents and automatic merge policy
+are project integrations, not installed features. See the [playbook coverage](docs/playbook-coverage.md).
+
+## For teams and maintainers
+
+- [Adopt, update or migrate](docs/adoption.md)
+- [Review of the previous package and the design changes](docs/review.md)
+- [Sources and implementation choices](docs/sources.md)
+- [Behavior evaluation scenarios](evals/README.md)
+- [Executed validation and remaining runtime checks](docs/validation.md)
+
+Validate package structure and the real Git/file lifecycle:
+
 ```bash
 python3 scripts/validate.py
 python3 -m unittest discover -s tests -v
 ```
-These checks validate packaging and installer behavior. They do not establish that a
-model follows the skills or that a downstream product satisfies its requirements.
 
-## Source and design decisions
-See [docs/sources.md](docs/sources.md). Per-change folders, the four-skill split, compact
-change option and installer are local design choices. The full source article is not
-redistributed here. No corporate internal data or credentials are needed.
+Test the unmerged plugin from a local checkout while inside a disposable project:
+
+```bash
+claude --plugin-dir /absolute/path/to/ai-native-sdlc/plugins/sdlc
+```
+
+Then use `/sdlc:start`. Package tests and agent walkthroughs do not replace a smoke test
+in your actual Claude Code environment.
