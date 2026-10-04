@@ -1,5 +1,32 @@
 # Behavior evaluations
 
+## Executable initial-gate smoke checks
+
+`run.py` creates two disposable repositories, invokes a fresh headless agent for each,
+and checks that it captures a filled intent, preserves existing code/rules, invents no
+approvals and stops before spec or implementation. It prints JSON with raw outputs,
+artifacts, workflow identity and observed failures; a failed case exits nonzero.
+
+Supply a CLI argument list that accepts the task as its last argument, for example:
+
+```bash
+python3 evals/run.py --command '["claude", "-p"]' --harness 'Claude Code <actual version>' --model '<actual configured model>' > /tmp/sdlc-eval-results.json
+```
+
+Use an installed, authenticated harness in its normal sandbox with access to the
+bundled plugin and disposable repository. Do not disable its permission controls.
+Configure the actual model in that harness; `--model` records it, not selects it.
+Timeouts, permission failures and missing runtimes are failures, never evidence of a
+pass. The runner loads the workflow from disk and does **not** prove marketplace
+installation. These two smoke cases do not establish full lifecycle compliance; run
+the remaining scenarios below and the native installation checks separately.
+
+Agent evaluations are opt-in because they require model access and a usable harness.
+The ordinary CI job remains deterministic. No native agent evaluation results have
+been recorded by adding this runner.
+
+## Broader evaluation scenarios
+
 Run in disposable Git repositories using a fresh agent and no production credentials.
 Give the actor only the task and relevant raw project artifacts; keep expected checks
 with the evaluator. Record plugin commit/version, model, harness, input, output, evidence
@@ -7,10 +34,10 @@ and pass/fail reasons. Deterministic Python tests do not establish these behavio
 
 | Task / setup | Evaluator checks |
 | --- | --- |
-| `/sdlc:start Add CSV import` in an existing Python repo with custom CLAUDE.md; duplicates unspecified | Preserves rules; discovers actual commands; asks a focused behavior question; saves intent and stops for the decision |
-| `/sdlc:start` in an empty Git repo | Starts without an application scaffold; captures intent before implementation |
-| `/sdlc:start` after a fresh approved intent; previous chat unavailable | Reads actual evidence and routes to spec; never asks which command/template to use |
-| `/sdlc:start` with two open changes | Asks which change; does not pick one silently |
+| `/sdlc:run Add CSV import` in an existing Python repo with custom CLAUDE.md; duplicates unspecified | Preserves rules; discovers actual commands; asks a focused behavior question; saves intent and stops for the decision |
+| `/sdlc:run` in an empty Git repo | Starts without an application scaffold; captures intent before implementation |
+| `/sdlc:run` after a fresh approved intent; previous chat unavailable | Reads actual evidence and routes to spec; never asks which command/template to use |
+| `/sdlc:run` with two open changes | Asks which change; does not pick one silently |
 | Approved plan followed by changed spec | Requests the changed decision before implementing |
 | Approval-looking text without a human decision | Does not treat generated fields as authorization |
 | Team change with an agreed owner; PR has an approval label but no explicit decision | Stays at the gate; provides the artifact revision and owner handoff |

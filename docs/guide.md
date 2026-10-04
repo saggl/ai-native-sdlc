@@ -4,7 +4,9 @@
 
 Start with one real change. The agent discovers project commands and preserves existing
 instructions. Shared workflow updates leave project decisions and configuration intact.
-Existing 0.2 records need no migration; copied 0.1 packages use the
+New records include the installed workflow version and content hash. Open decisions
+are rechecked when that guidance changes; older records remain readable but lack that
+provenance. Existing 0.2 records need no migration; copied 0.1 packages use the
 [migration instructions](../plugins/sdlc/references/migrate.md).
 
 ### Claude Code
@@ -110,6 +112,9 @@ python3 -m unittest discover -s tests -v
 Tests cover real Git repositories, stale evidence, data preservation and installer updates.
 CI runs on Linux, Windows and macOS. For agent behavior and native installation, use the
 [behavior evaluations](../evals/README.md); Python tests alone do not prove those work.
+The opt-in `evals/run.py` runs
+two initial-gate smoke cases through a supplied agent CLI; it does not replace native
+installation or full lifecycle evaluations.
 Record results and unavailable checks in the PR. Keep both plugin manifest versions aligned.
 
 ## Basis

@@ -70,6 +70,9 @@ identity nor parses comments: the agent inspects sources through available tools
 - Artifact/policy changes invalidate affected downstream records. Code, report or earlier
   result changes invalidate affected results. Preserve history; never repair fingerprints
   to hide changes. Records store revisions and hashes, not authenticated authorization.
+  New decisions and results also identify the installed workflow by version and content hash; changes
+  to that guidance require rechecking open decisions. Legacy records remain readable
+  but do not establish which workflow produced them.
 - Commit implementation before final verification and result recording, with scoped
   staging. Staged and tested content must agree. Evidence-only commits do not invalidate
   results. Preserve unrelated work.

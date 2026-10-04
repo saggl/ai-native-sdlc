@@ -1,6 +1,6 @@
 {
   "name": "sdlc",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A guided, resumable AI-native SDLC for your own repositories.",
   "author": {"name": "Christian Sagstetter"},
   "repository": "https://github.com/saggl/ai-native-sdlc"

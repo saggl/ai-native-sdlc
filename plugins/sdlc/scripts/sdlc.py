@@ -160,13 +160,27 @@ def artifact_snapshot(root, folder, stage):
     return values
 
 
+def workflow_provenance():
+    """Identify the installed guidance, including unversioned local edits."""
+    files = {path.relative_to(PLUGIN).as_posix(): sha(path.read_bytes())
+             for path in sorted(PLUGIN.rglob('*'))
+             if path.is_file() and path.suffix in ('.md', '.py', '.json')}
+    return {'version': VERSION, 'sha256': sha(json.dumps(files, sort_keys=True).encode())}
+
+
+def workflow_matches(record):
+    # Legacy records predate provenance; retain compatibility without claiming coverage.
+    return 'workflow' not in record or record['workflow'] == workflow_provenance()
+
+
 def approval_valid(root, folder, data, stage):
     try:
         snapshot = artifact_snapshot(root, folder, stage)
     except FileNotFoundError:
         return False
     records = [r for r in data['approvals'] if r['stage'] == stage]
-    return bool(records and records[-1]['snapshot'] == snapshot)
+    return bool(records and records[-1]['snapshot'] == snapshot
+                and workflow_matches(records[-1]))
 
 
 def require_approvals(root, folder, data, stages):
@@ -204,7 +218,8 @@ def record_approval(root, slug, stage, by, evidence, decision):
         raise ValueError('Commit the reviewed artifacts and policy before recording approval')
     commit = git(root, 'rev-parse', 'HEAD').decode().strip()
     record = {'stage': stage, 'by': by, 'evidence': evidence, 'decision': decision,
-              'commit': commit, 'recorded_at': now(), 'snapshot': snapshot}
+              'commit': commit, 'recorded_at': now(), 'snapshot': snapshot,
+              'workflow': workflow_provenance()}
     data['approvals'].append(record)
     save(root, folder, data)
     return record
@@ -277,6 +292,7 @@ def result_valid(root, folder, data, kind, code):
     last = records[-1]
     try:
         return (last['outcome'] == 'passed' and last['code'] == code
+                and workflow_matches(last)
                 and last['artifacts'] == artifact_snapshot(root, folder, 'plan')
                 and last['report_sha'] == file_digest(root, last['report'])
                 and last['prerequisites'] == prerequisite_snapshot(data, kind))
@@ -313,6 +329,7 @@ def record_result(root, slug, kind, outcome, report):
               'report_sha': report_sha, 'code': code, 'recorded_at': now(),
               'commit': git(root, 'rev-parse', 'HEAD').decode().strip(),
               'artifacts': artifact_snapshot(root, folder, 'plan'),
+              'workflow': workflow_provenance(),
               'prerequisites': prerequisite_snapshot(data, kind)}
     data['results'].append(record)
     if kind == 'learning' and outcome == 'passed':

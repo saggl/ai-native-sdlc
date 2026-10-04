@@ -9,7 +9,8 @@ Fill the project config from evidence, preserving existing values on later runs:
 - `commands`: verified build, test and lint commands, with expected success conditions.
   Leave unavailable commands absent and explain what needs to be supplied.
 - `policy_files`: repository-relative paths for applicable security, architecture,
-  product or review policies. These files join approval snapshots. Keep this concise.
+  product or review policies and applied domain skill source files. These files join
+  approval snapshots. Keep this concise.
 - `owners`: discover actual owners and retrievable identities from project policy; ask
   only for the missing owner needed now. Use [workflow defaults](workflow.md#team-decisions-on-one-pr)
   where no policy exists. Record agreed adaptations in REVIEW.md. Comment access alone
