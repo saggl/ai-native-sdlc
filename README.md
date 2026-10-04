@@ -12,18 +12,34 @@ delivery. It uses your existing repository, CI and release process.
 
 ## Start
 
-In Claude Code:
+Install the plugin for your agent, then use the same entry point for the whole change:
+
+| Agent | Command |
+| --- | --- |
+| Claude Code | `/sdlc:sdlc Add CSV import with clear errors for invalid rows` |
+| Codex | Invoke the installed `sdlc` skill and describe the change |
+| OpenCode | `/sdlc Add CSV import with clear errors for invalid rows` |
+
+For Claude Code:
 
 ```text
 /plugin marketplace add saggl/ai-native-sdlc
 /plugin install sdlc@ai-native-sdlc
-/sdlc:start Add CSV import with clear errors for invalid rows
+/sdlc:sdlc Add CSV import with clear errors for invalid rows
 ```
 
-Using another agent? See [Codex](docs/guide.md#codex) or [OpenCode](docs/guide.md#opencode).
+Using Codex or OpenCode? See [setup and use](docs/guide.md#setup-and-use).
 If Claude commands do not appear, use `/reload-plugins` or open a new session.
 
-## How it works
+## How to use it
+
+Describe new work, resume with the change ID, or ask for a focused action such as
+“show status” or “review change <id>.” The agent reads the saved state and chooses the
+right next step. You do not switch between start, status and review commands.
+
+The agent pauses when a human decision or external dependency is needed. Reply to the
+presented intent, spec or plan with `Intent approved`, `Spec approved` or
+`Plan approved`; otherwise give feedback. To resume, invoke the same command again.
 
 | You decide | The agent saves and does |
 | --- | --- |
@@ -31,13 +47,6 @@ If Claude commands do not appear, use `/reload-plugins` or open a new session.
 | Required behavior | `spec.md` |
 | Approach and checks | `plan.md`, then implementation, tests and fresh review |
 | Merge and release under project policy | Delivery evidence, observed outcome and follow-up |
-
-Reply `Intent approved`, `Spec approved` or `Plan approved` to the presented artifact.
-The agent handles revision tracking, setup and stage transitions. It pauses for a
-missing decision or blocker. Short artifacts and links to existing evidence are enough.
-
-Resume with `start`; use `status` for progress and `review` in a fresh session.
-In Claude Code these are `/sdlc:start`, `/sdlc:status` and `/sdlc:review <change-id>`.
 
 ## Teams
 
