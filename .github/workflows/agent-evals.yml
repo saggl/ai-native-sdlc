@@ -1,0 +1,32 @@
+# Runs this repo's agent smoke evals (evals/run.py) with Claude Code. Opt-in: needs secret ANTHROPIC_API_KEY.
+# Skips with a notice when the secret is absent. Optional repo variable EVAL_MODEL records the model.
+# Remove: delete this file.
+name: Agent evals
+on:
+  pull_request:
+    paths: ['plugins/sdlc/**', 'evals/**']
+  schedule:
+    - cron: '41 3 * * 1'
+permissions:
+  contents: read
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run agent evals
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::ANTHROPIC_API_KEY not set; skipping agent evals"
+            exit 0
+          fi
+          npm install -g @anthropic-ai/claude-code
+          python3 evals/run.py --command '["claude","-p"]' --harness "Claude Code $(claude --version)" --model "${{ vars.EVAL_MODEL || 'default' }}" > eval-results.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval-results.json
+          if-no-files-found: ignore
