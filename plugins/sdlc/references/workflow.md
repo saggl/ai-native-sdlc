@@ -8,11 +8,11 @@ Invoke the bundled helper using its absolute path and the target Git root:
 python3 "<plugin-root>/scripts/sdlc.py" --root "<project-root>" status
 ```
 
-`<plugin-root>` is the resolved `${CLAUDE_PLUGIN_ROOT}` from the calling skill, not a
-literal environment variable inside this reference. Quote arguments safely; treat user
+`<plugin-root>` is resolved by the calling skill: `${CLAUDE_PLUGIN_ROOT}` in Claude
+Code or the installed package path in Codex/OpenCode. Quote arguments safely; treat user
 text as arguments, never interpolate it as executable shell code.
 
-## Helper operations (Claude runs these)
+## Helper operations (the agent runs these)
 
 | Operation after `--root <project-root>` | Effect |
 | --- | --- |
