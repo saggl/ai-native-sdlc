@@ -1,6 +1,7 @@
 # Monitor: cron -> metric_command -> .sdlc/bands.py; tier decides log / diagnose / propose.
 # Needs secret ANTHROPIC_API_KEY and .sdlc/bands.json. Agent only writes via PR; no prod credentials.
-# Remove: delete this file. UNVERIFIED in CI: plugin install commands (only the propose tier needs them).
+# EXPERIMENTAL, not yet run in CI: verify the plugin install commands before relying on the propose tier.
+# Remove: delete this file.
 name: SDLC monitor
 on:
   schedule:

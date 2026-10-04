@@ -86,7 +86,7 @@ class WorkflowTests(unittest.TestCase):
             shutil.copytree(PLUGIN, copy)
             module = load_copy(copy)
             before = module.workflow_provenance()['sha256']
-            (copy / 'ci/review.yml').write_text('changed\n')
+            (copy / 'ci/monitor.yml').write_text('changed\n')
             (copy / 'hooks/guard.py').write_text('changed\n')
             self.assertEqual(module.workflow_provenance()['sha256'], before)
             (copy / 'references/stages.md').write_text('changed\n')
@@ -151,14 +151,17 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(set(data['hooks']), {'Stop', 'PreToolUse', 'PostToolUse'})
         self.assertTrue((self.root / '.claude/hooks/sdlc-guard.py').is_file())
 
-    def test_install_ci_never_overwrites(self):
+    def test_install_monitor_never_overwrites(self):
+        bands = self.root / '.sdlc/bands.json'
+        bands.parent.mkdir(exist_ok=True)
+        bands.write_text('{"custom": true}\n')
+        with self.assertRaisesRegex(ValueError, 'different content'):
+            sdlc.install(self.root, 'monitor')
+        self.assertEqual(bands.read_text(), '{"custom": true}\n')
+        bands.unlink()
         self.assertEqual(sorted(sdlc.install(self.root, 'monitor')['installed']),
                          ['.github/workflows/sdlc-monitor.yml', '.sdlc/bands.json', '.sdlc/bands.py'])
         self.assertEqual(sdlc.install(self.root, 'monitor')['installed'], [])
-        (self.root / '.github/workflows/sdlc-review.yml').write_text('custom\n')
-        with self.assertRaisesRegex(ValueError, 'different content'):
-            sdlc.install(self.root, 'review')
-        self.assertEqual((self.root / '.github/workflows/sdlc-review.yml').read_text(), 'custom\n')
 
     def test_legacy_approvals_without_provenance_remain_readable(self):
         self.approve('intent')

@@ -102,15 +102,34 @@ distinct. Delivery may mean a firmware artifact handoff; required hardware check
 Add integrations only for a demonstrated need. Nothing is active by default, and no
 credentials or automatic merge/deploy policy are installed.
 
-### Opt-in hooks and CI
+### Opt-in hooks and monitoring
 
-After setup the agent offers one short question about hooks and CI templates. On your
-explicit yes it runs `install <hooks|evals|review|handoff|monitor>`: `hooks` copies the
-guard to `.claude/hooks/sdlc-guard.py` and merges entries into `.claude/settings.json`;
-the others copy `ci/<name>.yml` to `.github/workflows/sdlc-<name>.yml` (`monitor` also
-`.sdlc/bands.py` and `bands.json`). Existing files are never overwritten. Guard rules
-come from `protected_paths`, `gates` and `commands.format` in `.sdlc/project.json`.
-Non-negotiable gates belong in managed settings owned by platform/IT.
+After setup the agent offers one short question. On your explicit yes it runs
+`install hooks` (copies the guard to `.claude/hooks/sdlc-guard.py` and merges entries
+into `.claude/settings.json`) or `install monitor` (experimental: copies
+`.github/workflows/sdlc-monitor.yml`, `.sdlc/bands.py` and `.sdlc/bands.json`; set
+`metric_command` to a command that writes a JSON array of numbers). Existing files are
+never overwritten. Guard rules come from `protected_paths`, `gates` and
+`commands.format` in `.sdlc/project.json`. Non-negotiable gates belong in managed
+settings owned by platform/IT.
+
+### CI with Claude
+
+Use Anthropic's tools directly; this plugin supplies the policy they read.
+
+- **PR review:** enable managed Code Review, or run
+  [claude-code-action](https://github.com/anthropics/claude-code-action) with a prompt
+  such as "Review this PR against REVIEW.md, spec.md and plan.md; end with the Tally
+  line." `@claude` comments on a PR then address review findings.
+- **Failed-build triage:** a step with `if: failure()` that runs
+  `claude -p "Read the build log, say whether the failure is flaky or real, summarize in
+  three lines"` and posts the result to the PR.
+- **Evals on configuration changes:** run your eval cases through `claude -p` on pull
+  requests touching `CLAUDE.md`, `.claude/**` or `REVIEW.md`, plus a nightly run, and
+  fail below an agreed pass rate. Start from 20–50 real tasks; add one per incident.
+- **Intent → spec handoff:** after an intent approval merges, a job may run
+  `claude -p "/sdlc:run <id>"` to draft spec.md on a branch and open a PR. The spec
+  still needs its human decision.
 
 ## Playbook coverage
 
@@ -121,7 +140,7 @@ integrated by intake, not reimplemented.
 | Play | Asset | Notes |
 | --- | --- | --- |
 | Capture as intent.md | [intent template](../plugins/sdlc/templates/intent.md) | `new --adopt` registers intents from connectors, scans and Tag |
-| Requirements and design | [spec stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-), [handoff template](../plugins/sdlc/ci/handoff.yml) | Link the Claude Design mock for front-end work; `install handoff` drafts spec PRs when an intent approval merges |
+| Requirements and design | [spec stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-), [CI handoff](#ci-with-claude) | Link the Claude Design mock for front-end work; a merged intent approval can trigger a spec draft PR |
 | Plan mode | [plan stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-) | Deviations go in plan.md `## Implementation deviations` |
 | Auto mode | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Routine work after plan approval; artifacts reviewed afterwards |
 | CLAUDE.md | [setup](../plugins/sdlc/references/setup.md) | Commands and recurring mistakes; repeated review flags land here |
@@ -129,11 +148,11 @@ integrated by intake, not reimplemented.
 | Hooks as build-time guardrails | [guard](../plugins/sdlc/hooks/guard.py) | Opt-in via `install hooks`; protected paths, locked tests, format |
 | Parallel sessions and subagents | [verifier](../plugins/sdlc/agents/verifier.md) | `claude --worktree` sessions; fresh-context verifier |
 | Feedback loop | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Failing test first, then `lock-tests` |
-| Continuous evals in CI | [evals template](../plugins/sdlc/ci/evals.yml) | Opt-in via `install evals` |
-| AI in the PR review loop | [review policy](../plugins/sdlc/templates/review-policy.md) | Bugs, Security, Compliance; `Tally:` line; `install review` adds claude-code-action review, `@claude` fixes and failed-build triage, or enable managed Code Review |
+| Continuous evals in CI | [CI evals](#ci-with-claude), [eval runner](../evals/run.py) | Run on configuration changes and nightly; gate on pass rate |
+| AI in the PR review loop | [review policy](../plugins/sdlc/templates/review-policy.md), [CI review](#ci-with-claude) | Bugs, Security, Compliance; `Tally:` line; managed Code Review or claude-code-action reads it |
 | Hooks as approval gates | [guard](../plugins/sdlc/hooks/guard.py) | `gates` in project.json; managed settings for non-negotiable gates |
 | CI/CD integration and deployment | [deliver stage](../plugins/sdlc/references/stages.md#deliver-deliver) | Autonomy by environment; one rehearsed rollback; PR-only writes |
-| Closing the loop | [monitor template](../plugins/sdlc/ci/monitor.yml), [bands](../plugins/sdlc/scripts/bands.py) | Opt-in via `install monitor`; deterministic bands: 1σ log, 2σ read-only diagnosis, 3σ intent PR |
+| Closing the loop | [bands](../plugins/sdlc/scripts/bands.py), [monitor template](../plugins/sdlc/ci/monitor.yml) | Experimental, `install monitor`; deterministic bands: 1σ log, 2σ read-only diagnosis, 3σ intent PR |
 | Recurring codebase scans | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Claude Security scans; bounded fix is a patch PR, wider finding an adopted intent, dismissals need a reason |
 | Claude on call with Claude Tag | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Tag, channel and ticket requests enter by the same intake; post-mortem in learning.md |
 
