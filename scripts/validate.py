@@ -30,11 +30,10 @@ def validate():
             codex_entry['source'] != {'source': 'local', 'path': './plugins/sdlc'}):
         errors.append('Invalid Codex marketplace entry')
     if not (PLUGIN / 'SKILL.md').read_text().startswith('---\nname: sdlc\ndescription: '):
-        errors.append('Invalid OpenCode skill')
-    for name in ('start', 'status', 'review'):
-        command = ROOT / 'opencode/commands' / f'sdlc-{name}.md'
-        if not command.is_file() or 'Load the `sdlc` skill' not in command.read_text():
-            errors.append(f'Missing OpenCode command: {name}')
+        errors.append('Invalid shared SDLC skill')
+    command = ROOT / 'opencode/commands/sdlc.md'
+    if not command.is_file() or 'Load the `sdlc` skill' not in command.read_text():
+        errors.append('Missing OpenCode SDLC command')
     for name in ('intent', 'spec', 'plan', 'verification', 'review', 'delivery', 'learning', 'REVIEW'):
         path = PLUGIN / 'templates' / (name + '.md')
         if not path.is_file() or not path.read_text().startswith('# '):
