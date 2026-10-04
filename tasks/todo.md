@@ -4,22 +4,22 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
 
 ## Phase 1: Review findings
 
-- [ ] A1: Rename the policy template and detect case collisions
+- [x] A1: Rename the policy template and detect case collisions
   - Acceptance: `templates/review-policy.md` exists; `templates/REVIEW.md` is gone from
     git; `setup.md` points to the new name; validate fails on any two tracked paths that
     are equal case-insensitively.
   - Verify: test with an injected collision list → error; `git status` clean on macOS.
   - Files: plugins/sdlc/templates/review-policy.md, plugins/sdlc/references/setup.md, scripts/validate.py, tests/test_validate.py (new)
-- [ ] A2: Fix the stale command in migrate.md
+- [x] A2: Fix the stale command in migrate.md
   - Acceptance: `/sdlc:run` used; the `migrate.md` exemption is removed from the
     obsolete-command check.
   - Verify: validate passes; a planted removed start command fails.
   - Files: plugins/sdlc/references/migrate.md, scripts/validate.py
-- [ ] A3: Compute the code snapshot once per `all_status`
+- [x] A3: Compute the code snapshot once per `all_status`
   - Acceptance: `status(root, slug, code=None)`; `all_status` passes one precomputed digest.
   - Verify: test patches `code_snapshot` and counts calls == 1 with 2 open changes.
   - Files: plugins/sdlc/scripts/sdlc.py, tests/test_workflow.py
-- [ ] A4: Scope provenance to guidance and report `workflow_changed`
+- [x] A4: Scope provenance to guidance and report `workflow_changed`
   - Acceptance: the hash covers only the guidance paths; validity ignores the workflow
     hash; `status` returns `workflow_changed: true` with an unchanged `next`; legacy
     records still read.
@@ -31,18 +31,18 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
 
 ## Phase 2: Helper additions
 
-- [ ] T5: Plan deviations section outside the approval snapshot
+- [x] T5: Plan deviations section outside the approval snapshot
   - Acceptance: text after `## Implementation deviations` in plan.md doesn't change the
     snapshot; edits above it do. The template has the heading. stages.md tells the agent
     to record departures there in the same commit and to send material ones back to approval.
   - Verify: two tests (append below → still approved; edit above → approve-plan).
   - Files: sdlc.py, templates/plan.md, references/stages.md, tests/test_workflow.py
-- [ ] T6: `lock-tests <id> --paths …`
+- [x] T6: `lock-tests <id> --paths …`
   - Acceptance: requires committed, existing paths; stores `locked_tests` in state;
     `record-result` refuses when any locked file differs from its hash.
   - Verify: lock → edit test → commit → record verification raises; unchanged → passes.
   - Files: sdlc.py, references/workflow.md, references/stages.md, tests/test_workflow.py
-- [ ] T7: `new <id> --adopt`
+- [x] T7: `new <id> --adopt`
   - Acceptance: uses the existing `changes/<id>/intent.md`, creates state.json only, and
     refuses when state.json exists or intent is missing; the title comes from `--title`.
   - Verify: tests for adopt, missing intent and existing state.
@@ -52,14 +52,14 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
 
 ## Phase 3: Deterministic layer (hooks)
 
-- [ ] T8: `hooks/guard.py` edit guard
+- [x] T8: `hooks/guard.py` edit guard
   - Acceptance: PreToolUse Edit/Write/MultiEdit/NotebookEdit: exit 2 with a reason for
     a `protected_paths` glob, a path in any open change's `locked_tests`, or content
     matching secret patterns (private key header, AWS key, `ghp_`/`sk-ant-` tokens).
     Exit 0 when not configured.
   - Verify: tests/test_guard.py feeds JSON stdin through subprocess.
   - Files: plugins/sdlc/hooks/guard.py, tests/test_guard.py
-- [ ] T9: Guard approval gates and format-after-edit
+- [x] T9: Guard approval gates and format-after-edit
   - Acceptance: PreToolUse Bash: the first matching `gates` entry without its
     `require_env` → `block` (exit 2) or `ask` (JSON `permissionDecision: ask`), each with
     its reason and approval route. PostToolUse Edit/Write runs `commands.format` with the
@@ -67,7 +67,7 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
   - Verify: tests for block, ask, allow-with-env and format invoked (a stub command
     writes a marker file).
   - Files: hooks/guard.py, tests/test_guard.py
-- [ ] T10: `install hooks` and setup offer
+- [x] T10: `install hooks` and setup offer
   - Acceptance: copies the guard to `.claude/hooks/sdlc-guard.py`; merges PreToolUse
     and PostToolUse entries into `.claude/settings.json`, preserving other keys; running
     it again is a no-op; refuses when a differing sdlc-guard.py exists. setup.md offers
@@ -79,14 +79,14 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
 
 ## Phase 4: Loop automation (CI)
 
-- [ ] T11: `scripts/bands.py` plus `ci/bands.json`
+- [x] T11: `scripts/bands.py` plus `ci/bands.json`
   - Acceptance: reads a JSON number array; baseline = all but the last `window` points;
     WE rule 1 (1 point >3σ) → propose; rule 2 (2 of 3 >2σ) → diagnose; rules 3/4 (4 of 5
     >1σ, 8 on one side) → diagnose; a single >1σ point → log; fewer than `min_points`
     → log. Prints `{"tier", "rule", "mean", "sigma", "last"}`.
   - Verify: tests/test_bands.py with spike, drift, noise and short series.
   - Files: plugins/sdlc/scripts/bands.py, plugins/sdlc/ci/bands.json, tests/test_bands.py
-- [ ] T12: CI templates and `install <evals|review|handoff|monitor>`
+- [x] T12: CI templates and `install <evals|review|handoff|monitor>`
   - Acceptance:
     - evals.yml: PR paths CLAUDE.md, `.claude/**`, REVIEW.md plus nightly; runs
       `evals/*.json` through `claude -p`; fails below `EVAL_PASS_RATE`.
@@ -101,7 +101,7 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
   - Verify: tests: install creates files, refuses a differing existing file, running it
     again is a no-op; validate checks each template has `on:`, `permissions:` and `claude`.
   - Files: plugins/sdlc/ci/*.yml, sdlc.py, scripts/validate.py, tests/test_workflow.py
-- [ ] T13: This repo's own agent eval CI
+- [x] T13: This repo's own agent eval CI
   - Acceptance: `.github/workflows/agent-evals.yml` runs `evals/run.py` on PRs touching
     `plugins/sdlc/**`, `evals/**`, plus a weekly run; skips with a notice when
     `ANTHROPIC_API_KEY` is absent; uploads the results JSON.
@@ -112,7 +112,7 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
 
 ## Phase 5: Instructions and proof
 
-- [ ] T14: Stage instructions for the remaining plays
+- [x] T14: Stage instructions for the remaining plays
   - Acceptance:
     - Build: auto mode for routine work after plan approval; split independent steps
       across `claude --worktree`, starting with 2–3; verifier subagent as the final check.
@@ -126,7 +126,7 @@ Verify every task with: `python3 scripts/validate.py && python3 -m unittest disc
     - No net growth of stages.md beyond about 25 lines.
   - Verify: validate links; existing eval checks still pass.
   - Files: references/stages.md, agents/verifier.md, templates/review-policy.md, templates/review.md, templates/spec.md
-- [ ] T15: Coverage table, validation, release
+- [x] T15: Coverage table, validation, release
   - Acceptance: `docs/guide.md#playbook-coverage` lists 16 plays with asset links;
     validate fails when the table has fewer than 16 rows or a link is broken; the
     "No hooks…" statements in README/guide/workflow.md are replaced with "opt-in only";
