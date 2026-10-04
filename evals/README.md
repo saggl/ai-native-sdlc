@@ -25,6 +25,17 @@ Agent evaluations are opt-in because they require model access and a usable harn
 The ordinary CI job remains deterministic. No native agent evaluation results have
 been recorded by adding this runner.
 
+## CI
+
+`.github/workflows/agent-evals.yml` runs `evals/run.py` with Claude Code on pull requests
+touching `plugins/sdlc/**` or `evals/**` and weekly, then uploads `eval-results.json`. It
+skips with a notice when the `ANTHROPIC_API_KEY` secret is absent. Set the repository
+variable `EVAL_MODEL` to record the configured model. No run results exist until it runs.
+
+User projects can install `plugins/sdlc/ci/evals.yml`. It runs each `evals/*.json` case,
+`{"prompt": "<task>", "check": "<shell command>"}`, through `claude -p`, then the `check`
+command (exit 0 = pass), and fails below `EVAL_PASS_RATE` (default 0.9).
+
 ## Broader evaluation scenarios
 
 Run in disposable Git repositories using a fresh agent and no production credentials.
