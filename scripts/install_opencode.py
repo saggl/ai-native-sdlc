@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins' / 'sdlc'
 COMMANDS = ROOT / 'opencode' / 'commands'
 NAMES = ('sdlc.md',)
+LEGACY_NAMES = ('sdlc-start.md', 'sdlc-status.md', 'sdlc-review.md')
 MARKER = '.ai-native-sdlc-install'
 
 
@@ -53,6 +54,11 @@ def install(config: Path):
     commands.mkdir(parents=True, exist_ok=True)
     for name in NAMES:
         shutil.copy2(COMMANDS / name, commands / name)
+    # Remove only legacy commands whose bytes still match this install's saved hashes.
+    for name in LEGACY_NAMES:
+        path = commands / name
+        if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == previous.get(name):
+            path.unlink()
     return skill
 
 
