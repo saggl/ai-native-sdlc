@@ -10,7 +10,8 @@ stale decision. Replace template prompts; keep each artifact as short as its dec
 allows. Link existing sources and evidence instead of duplicating them.
 
 1. **Intent:** capture problem, affected people/systems, measurable outcome, scope and
-   constraints. Ask only questions that change the decision. Present it to its owner.
+   constraints. Ask only questions that change the decision. Present it to its owner
+   using the team handoff in workflow.md when applicable.
 2. **Spec:** after intent approval, run `draft <id> spec`. Inspect the code and policies.
    Define behavior, failure cases, interfaces and stable `AC-1`, `AC-2` criteria.
    Resolve blocking concerns with their owner; present behavior for human approval.
@@ -71,9 +72,12 @@ a pass. Review evidence does not authorize merge or release.
 
 ## Deliver: deliver
 
-Use the existing host, CI and release process. Prepare a PR or equivalent linking
+Use the existing host, CI and release process. Update the existing change PR (create
+one only if absent), or its equivalent, linking
 intent/spec/plan, decisions and evidence. Explain behavior, risks, open decisions and
-rollback. A separate preparation PR is optional.
+rollback. When ready, obtain the teammate's final GitHub approving review and required
+checks under the agreed team policy. Stage comments and an agent's review report do not
+replace this decision. A separate preparation PR is optional.
 
 Within existing authorization, fix actionable review/CI failures and repeat verification
 and fresh review after code changes. Do not change permissions, branch rules, required
