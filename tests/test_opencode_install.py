@@ -22,7 +22,7 @@ class OpenCodeInstallTests(unittest.TestCase):
             skill = installer.install(config)
             self.assertTrue((skill / 'SKILL.md').is_file())
             self.assertTrue((skill / 'references/stages.md').is_file())
-            self.assertTrue((config / 'commands/sdlc-start.md').is_file())
+            self.assertTrue((config / 'commands/sdlc.md').is_file())
             self.assertIn('status', subprocess.check_output([
                 sys.executable, str(skill / 'scripts/sdlc.py'), '--help'
             ], text=True))
@@ -32,7 +32,7 @@ class OpenCodeInstallTests(unittest.TestCase):
     def test_conflicts_are_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / 'opencode'
-            command = config / 'commands/sdlc-start.md'
+            command = config / 'commands/sdlc.md'
             command.parent.mkdir(parents=True)
             command.write_text('my command')
             with self.assertRaises(ValueError):
@@ -56,11 +56,11 @@ class OpenCodeInstallTests(unittest.TestCase):
             skill = installer.install(config)
             sources = root / 'commands'
             shutil.copytree(installer.COMMANDS, sources)
-            incoming = sources / 'sdlc-start.md'
+            incoming = sources / 'sdlc.md'
             incoming.write_text(incoming.read_text() + '\nNew upstream instructions.\n')
             with patch.object(installer, 'COMMANDS', sources):
                 installer.install(config)
-                installed = config / 'commands/sdlc-start.md'
+                installed = config / 'commands/sdlc.md'
                 self.assertEqual(installed.read_bytes(), incoming.read_bytes())
                 installed.write_text('local customization')
                 marker = (skill / installer.MARKER).read_bytes()
@@ -83,7 +83,7 @@ class OpenCodeInstallTests(unittest.TestCase):
             config = Path(directory) / 'config'
             skill = installer.install(config)
             (skill / installer.MARKER).write_text('Installed by scripts/install_opencode.py\n')
-            command = config / 'commands/sdlc-start.md'
+            command = config / 'commands/sdlc.md'
             command.write_text('unknown older or user content')
             with self.assertRaises(ValueError):
                 installer.install(config)
