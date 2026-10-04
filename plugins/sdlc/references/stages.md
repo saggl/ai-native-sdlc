@@ -49,12 +49,13 @@ Record the result, commit scoped evidence, and continue to fresh review after a 
 
 ## Review: review
 
-For `/sdlc:start`, delegate to the bundled `sdlc:reviewer` when available. Supply only
+From the start workflow, delegate to the bundled `sdlc:reviewer` when available. Supply only
 the target repository, change folder, approved baseline, implementation revision and
-verification report; do not suggest a verdict. Otherwise request a fresh session with
-`/sdlc:review <id>` and stop at that handoff.
+verification report; do not suggest a verdict. Otherwise request a fresh session and
+stop at that handoff. In Claude Code, use `/sdlc:review <id>`; in OpenCode, use
+`/sdlc-review <id>`; in Codex, invoke the installed `review` skill with the change ID.
 
-For `/sdlc:review`, review yourself only if you did not implement the change. Read project
+From the review entry point, review yourself only if you did not implement the change. Read project
 instructions, REVIEW.md, policies, approved artifacts and actual decision evidence.
 Inspect the complete relevant diff and surrounding code, including untracked work.
 Check logic, security, compatibility, every AC, test strength and plan deviations.
@@ -102,3 +103,4 @@ policy or code, repeat affected decisions, verification and review before closin
 
 Record learning as `passed` only after observation and triage, even if the product
 outcome was below target. Completion preserves history; follow-up work gets a new intent.
+

@@ -32,3 +32,4 @@ and pass/fail reasons. Deterministic Python tests do not establish these behavio
 Before a release, also test a real Claude Code marketplace installation and local
 `--plugin-dir` session. Run a complete small task in that runtime. Report any unavailable
 runtime checks explicitly. Keep only actual executed results in validation records.
+

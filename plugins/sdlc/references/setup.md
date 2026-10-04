@@ -28,12 +28,14 @@ work, identify host tests, cross-build, simulation and target/HIL evidence separ
 record hardware availability and timing/memory constraints. Do not invent support.
 
 Preserve existing CLAUDE.md, AGENTS.md, README and REVIEW.md. Add only a small relevant
-pointer to CLAUDE.md, for example: "For tracked changes use /sdlc:start. Project context
-is in .sdlc/project.json; decisions and evidence are in changes/." Add verified commands
-and recurring mistakes if missing; keep CLAUDE.md short. Never replace project rules.
+pointer to the project's active agent instructions (such as CLAUDE.md or AGENTS.md),
+using that agent's start entry point from the installed skill. Mention .sdlc/project.json
+and the configured changes directory. Add verified commands and recurring mistakes if
+missing; keep instructions short. Never replace project rules.
 Use the bundled REVIEW.md template only if no review policy exists; adapt it to the
 actual product. Resolve conflicting policy with its owner.
 
 Show a brief setup summary and any decision that blocks the task, then capture its
 intent. Do not ask the user to complete a questionnaire or configure optional integrations
 before the first task. Setup is local and repeatable; plugin updates do not rewrite it.
+

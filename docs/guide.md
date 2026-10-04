@@ -3,7 +3,7 @@
 ## Adopt and update
 
 Start with one real change in an existing or empty Git repository using the README.
-Claude discovers project commands and preserves existing instructions. One person can
+The agent discovers project commands and preserves existing instructions. One person can
 own several decisions; team approvals use the existing review system.
 
 For a shared project, run these in its directory:
@@ -28,6 +28,24 @@ project's decisions or configuration. Teams can roll out a tested marketplace/re
 For the old copied 0.1 package, follow the [migration instructions](../plugins/sdlc/references/migrate.md).
 Existing 0.2 records need no migration.
 
+For Codex, the repository's `.agents/plugins/marketplace.json` points to the same
+`plugins/sdlc` package. Add the repository as a plugin marketplace and install `sdlc`
+in the ChatGPT desktop Plugins Directory. In a project where its repo marketplace is
+available, add this to `.codex/config.toml`:
+
+```toml
+[plugins."sdlc@ai-native-sdlc"]
+enabled = true
+```
+
+The installed `start`, `status` and `review` skills load the same workflow references.
+
+For OpenCode, clone the repository and run `python3 scripts/install_opencode.py`.
+This copies the package to `~/.config/opencode/skills/sdlc` and the three commands
+to `~/.config/opencode/commands/`. Run it again after `git pull`; it does not modify
+project files or unrelated commands. OpenCode's JS/TS plugin hooks are unnecessary
+for a workflow made of agent skills, slash commands and a local Python helper.
+
 ## Team workflow
 
 Use one branch and PR per change, from the first intent through implementation.
@@ -40,22 +58,22 @@ REVIEW.md; never silently change repository settings.
 | Intent: problem, scope and value | Product or delegated task owner | Explicit approval of the presented intent |
 | Spec: behavior and constraints | Product/domain owner | Explicit approval of the presented spec |
 | Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit approval of the presented plan |
-| Implementation and fixes within scope | Claude, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
+| Implementation and fixes within scope | The agent, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
 | Merge | One teammate, with required checks passing | GitHub approving review |
 | Release | Existing release authority | Existing release decision |
 
-The engineer driving Claude can approve a routine plan. Claude cannot approve its own
+The engineer driving the agent can approve a routine plan. The agent cannot approve its own
 work or impersonate that engineer. Escalate significant risk such as changed safety
 behavior, authentication, public interfaces, data migrations or architecture.
 
 For example, a CSV import follows this sequence:
 
-1. Claude saves and commits `changes/csv-import/intent.md`. With permission to push/open
+1. The agent saves and commits `changes/csv-import/intent.md`. With permission to push/open
    a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
-2. Claude saves a presentation in the PR with the change ID, stage, full commit SHA
+2. The agent saves a presentation in the PR with the change ID, stage, full commit SHA
    and revision-pinned artifact link, then asks the product owner to reply to that
    presentation with `Intent approved` or feedback. The owner need not type the SHA.
-3. Resume `/sdlc:start`. Claude retrieves the response, checks its author against the
+3. Resume the agent's start entry point. The agent retrieves the response, checks its author against the
    agreed owner and binds the decision to the exact revision in the saved presentation.
    It retains both references; if the reply could refer to multiple revisions, it asks
    which one rather than guessing from the PR head or timestamps. Repeat with `Spec approved` and `Plan approved`, using their respective owners. Exact
@@ -64,7 +82,7 @@ For example, a CSV import follows this sequence:
    an unresolved change request do not count. An authorized engineer's explicit chat
    approval of the saved plan is also usable when team policy allows; retain its
    quote/context and do not represent it as a GitHub review.
-4. Claude implements, tests and obtains fresh agent review on the same branch. Material
+4. The agent implements, tests and obtains fresh agent review on the same branch. Material
    scope or behavior changes return to the relevant human decision.
 5. Mark the PR ready and request a teammate's review. They review behavior, evidence,
    findings and relevant code, then choose GitHub **Approve**. Merge only when project
@@ -79,15 +97,16 @@ GitHub can separately dismiss final PR approvals when the diff changes, dependin
 branch settings. See [GitHub reviews](https://docs.github.com/en/pull-requests/reference/pull-request-reviews)
 and [branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
-The current helper records evidence and detects changed content. Claude inspects approval
+The current helper records evidence and detects changed content. The agent inspects approval
 sources through available tools; there is no built-in GitHub identity/role enforcement,
 comment parser or background watcher. If evidence is inaccessible or the approver's role
-is unclear, stop at that decision. Resume manually with `/sdlc:start` after a response.
+is unclear, stop at that decision. Resume manually with the agent's start entry point after a response.
 Intent, spec and plan remain separate sequential decisions in this version.
 
 ## Extend when needed
 
-Keep project commands and recurring mistakes in CLAUDE.md. Put reusable domain policy
+Keep project commands and recurring mistakes in the agent instructions for your project.
+Put reusable domain policy
 in project/company skills. Link authoritative Jira, Polarion or Teamcenter records;
 do not copy their contents into a second source of truth.
 
@@ -95,7 +114,7 @@ For embedded work, distinguish host tests, cross-build, simulation and target/HI
 evidence. A firmware delivery can be an agreed artifact handoff. Missing required
 hardware evidence remains a blocker.
 
-The helper creates files, records decisions and checks for stale inputs. Claude uses
+The helper creates files, records decisions and checks for stale inputs. The agent uses
 the project's tools to build, test, review, deliver and observe. The helper never calls
 a model or executes product commands. Skills and local records are not access controls:
 authenticated approvals, branch rules, CI and protected environments belong to the project.
@@ -134,3 +153,4 @@ Packaging references: [plugins](https://code.claude.com/docs/en/plugins),
 [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
 [skills](https://code.claude.com/docs/en/skills) and
 [plugin CLI](https://code.claude.com/docs/en/plugins/cli-reference).
+

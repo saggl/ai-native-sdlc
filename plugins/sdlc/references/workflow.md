@@ -8,11 +8,11 @@ Invoke the bundled helper using its absolute path and the target Git root:
 python3 "<plugin-root>/scripts/sdlc.py" --root "<project-root>" status
 ```
 
-`<plugin-root>` is the resolved `${CLAUDE_PLUGIN_ROOT}` from the calling skill, not a
-literal environment variable inside this reference. Quote arguments safely; treat user
+`<plugin-root>` is resolved by the calling skill: `${CLAUDE_PLUGIN_ROOT}` in Claude
+Code or the installed package path in Codex/OpenCode. Quote arguments safely; treat user
 text as arguments, never interpolate it as executable shell code.
 
-## Helper operations (Claude runs these)
+## Helper operations (the agent runs these)
 
 | Operation after `--root <project-root>` | Effect |
 | --- | --- |
@@ -61,7 +61,7 @@ On resume, recheck referenced decisions; continue without asking for unchanged, 
 valid approvals again. New implementation commits alone do not revoke artifact decisions.
 GitHub's final approving review is a separate merge gate; stage comments and fresh agent
 review do not satisfy it. No built-in identity/role enforcement, comment parser or watcher
-is installed: use available tools to inspect evidence and `/sdlc:start` to resume manually.
+is installed: use available tools to inspect evidence and the agent's start entry point to resume manually.
 
 ## Rules shared by every stage
 
@@ -73,7 +73,7 @@ is installed: use available tools to inspect evidence and `/sdlc:start` to resum
   SHA-256 of artifacts/policies. They detect stale content; they do not authenticate
   identity. For team gates use retrievable PR reviews or the team's approval system.
   For a solo project use the actual explicit chat decision and identify it as such.
-- No agent self-approval. An authorized human driving Claude may approve a routine
+- No agent self-approval. An authorized human driving the agent may approve a routine
   plan; this is distinct from a teammate's final merge review. No checkbox, label,
   commit author, generated status or Git merge alone is
   evidence of a human's intended decision. Resolve inaccessible evidence before proceeding.
@@ -97,3 +97,4 @@ is installed: use available tools to inspect evidence and `/sdlc:start` to resum
 Skills and local files are guidance, not a security boundary. Server-side branch rules,
 required checks, protected environments and permissions remain authoritative. This
 plugin installs no hooks, background jobs, model keys, auto-merge or deployment access.
+

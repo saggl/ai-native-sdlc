@@ -1,13 +1,15 @@
 # AI-native SDLC
 
-**Describe a change. Approve the decisions. Let Claude do the work.**
+**Describe a change. Approve the decisions. Let your coding agent do the work.**
 
-A Claude Code plugin for your own projects. It keeps intent, specification, plan and
+A workflow for Claude Code, Codex and OpenCode. It keeps intent, specification, plan and
 evidence in Git, so the next session can pick up where you left off.
 
 ## Start
 
-In Claude Code:
+Use Git, Python 3.10+ and access to this private repository. Choose your agent:
+
+**Claude Code** (plugin marketplace):
 
 ```text
 /plugin marketplace add saggl/ai-native-sdlc
@@ -20,28 +22,45 @@ Then, inside the project you work on:
 /sdlc:start Add CSV import with clear errors for invalid rows
 ```
 
-Requires Claude Code with plugin support, Git, Python 3.10+ and access to this private
-repository. If commands do not appear, use `/reload-plugins` or open a new session.
+If commands do not appear, use `/reload-plugins` or open a new session.
+
+**Codex** (plugin marketplace): run `codex plugin marketplace add
+saggl/ai-native-sdlc`, then install `sdlc` from that source in the ChatGPT desktop
+Plugins Directory. Invoke its `start` skill with your change description; use
+`status` or `review` when needed. The same package includes the helper and templates.
+See [team setup](docs/guide.md#adopt-and-update).
+
+**OpenCode** (global skill and commands): clone this repository, then run:
+
+```bash
+python3 scripts/install_opencode.py
+```
+
+In any project, run `/sdlc-start Add CSV import with clear errors for invalid rows`.
+Use `/sdlc-status` and `/sdlc-review <change-id>` for progress and review. Run the
+installer again after pulling an update. It only replaces its own installed skill and
+commands; it refuses to overwrite a conflicting command. Open a new OpenCode session
+after installation.
 
 ## The workflow
 
-| You approve | Claude saves and does |
+| You approve | The agent saves and does |
 | --- | --- |
 | The problem and outcome | `intent.md` |
 | The required behavior | `spec.md` |
 | The approach and checks | `plan.md`, then implementation, tests and fresh review |
 | The project's release decision | Delivery evidence, observed outcome and follow-up |
 
-Claude handles setup and continues between stages. It pauses for a decision or a real
+The agent handles setup and continues between stages. It pauses for a decision or a real
 blocker. Each approval applies to the saved content you reviewed.
 
-**Resume with `/sdlc:start`.** Use `/sdlc:status` for progress or
-`/sdlc:review <change-id>` for review in a fresh session.
+Resume with your agent's start entry point. Use its status and review entry points;
+run review in a fresh session.
 
 ## Working as a team
 
 Use one PR per change. Name the decision owners and use explicit stage replies such as
-`Intent approved`, `Spec approved` and `Plan approved`; Claude binds each decision to
+`Intent approved`, `Spec approved` and `Plan approved`; The agent binds each decision to
 the committed artifact revision it presented. Use GitHub **Approve** for the final merge
 review. The implementing engineer can approve a routine plan; significant risk needs a
 teammate. See the [team workflow](docs/guide.md#team-workflow) for roles and an example.
@@ -61,3 +80,4 @@ project-specific integrations.
 
 [Team setup and maintenance](docs/guide.md) ·
 [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook)
+
