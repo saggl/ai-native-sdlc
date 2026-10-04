@@ -13,6 +13,8 @@ def validate():
         errors.append('Remove obsolete copied-package entry points')
     marketplace = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
     manifest = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text())
+    portable = json.loads((PLUGIN / 'plugin.json').read_text())
+    codex_marketplace = json.loads((ROOT / '.agents/plugins/marketplace.json').read_text())
     if marketplace['name'] != 'ai-native-sdlc' or not marketplace.get('owner', {}).get('name'):
         errors.append('Invalid marketplace identity')
     entry, = marketplace['plugins']
@@ -20,6 +22,19 @@ def validate():
         errors.append('Marketplace must point to the self-contained sdlc plugin')
     if not re.fullmatch(r'\d+\.\d+\.\d+', manifest.get('version', '')):
         errors.append('Use a version for managed plugin updates')
+    if portable.get('name') != manifest['name'] or portable.get('version') != manifest['version']:
+        errors.append('Claude and portable plugin identities must match')
+    codex_entry, = codex_marketplace['plugins']
+    if (codex_marketplace['name'] != marketplace['name'] or
+            codex_entry['name'] != manifest['name'] or
+            codex_entry['source'] != {'source': 'local', 'path': './plugins/sdlc'}):
+        errors.append('Invalid Codex marketplace entry')
+    if not (PLUGIN / 'SKILL.md').read_text().startswith('---\nname: sdlc\ndescription: '):
+        errors.append('Invalid OpenCode skill')
+    for name in ('start', 'status', 'review'):
+        command = ROOT / 'opencode/commands' / f'sdlc-{name}.md'
+        if not command.is_file() or 'Load the `sdlc` skill' not in command.read_text():
+            errors.append(f'Missing OpenCode command: {name}')
     for name in ('intent', 'spec', 'plan', 'verification', 'review', 'delivery', 'learning', 'REVIEW'):
         path = PLUGIN / 'templates' / (name + '.md')
         if not path.is_file() or not path.read_text().startswith('# '):
@@ -29,8 +44,8 @@ def validate():
         text = path.read_text()
         if not text.startswith(f'---\nname: {name}\ndescription: ') or '\n---\n' not in text[4:]:
             errors.append(f'Invalid skill frontmatter: {name}')
-        if '${CLAUDE_PLUGIN_ROOT}' not in text:
-            errors.append(f'Use portable bundled paths: {name}')
+        if '<plugin-root>' not in text or '${CLAUDE_PLUGIN_ROOT}' not in text:
+            errors.append(f'Use resolved bundled paths: {name}')
     for path in ROOT.rglob('*.md'):
         if '.git' in path.parts:
             continue
@@ -41,7 +56,7 @@ def validate():
             if not (path.parent / link.split('#')[0]).exists():
                 errors.append(f'Broken link in {path.relative_to(ROOT)}: {link}')
         if path.is_relative_to(PLUGIN):
-            for relative in re.findall(r'\$\{CLAUDE_PLUGIN_ROOT\}/([\w./-]+)', text):
+            for relative in re.findall(r'<plugin-root>/([\w./-]+)', text):
                 if not (PLUGIN / relative).is_file():
                     errors.append(f'Missing bundled resource: {relative}')
             if '.sdlc/templates' in text or '.sdlc/workflow.md' in text:
@@ -54,4 +69,4 @@ if __name__ == '__main__':
     problems = validate()
     if problems:
         raise SystemExit('\n'.join(problems))
-    print('Marketplace, plugin assets and Markdown links validated.')
+    print('Marketplaces, plugin assets and Markdown links validated.')

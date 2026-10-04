@@ -8,11 +8,11 @@ Invoke the bundled helper using its absolute path and the target Git root:
 python3 "<plugin-root>/scripts/sdlc.py" --root "<project-root>" status
 ```
 
-`<plugin-root>` is the resolved `${CLAUDE_PLUGIN_ROOT}` from the calling skill, not a
-literal environment variable inside this reference. Quote arguments safely; treat user
+`<plugin-root>` is resolved by the calling skill: `${CLAUDE_PLUGIN_ROOT}` in Claude
+Code or the installed package path in Codex/OpenCode. Quote arguments safely; treat user
 text as arguments, never interpolate it as executable shell code.
 
-## Helper operations (Claude runs these)
+## Helper operations (the agent runs these)
 
 | Operation after `--root <project-root>` | Effect |
 | --- | --- |
@@ -31,56 +31,56 @@ an approval is recorded. Git history, not a shared example project, holds the de
 
 ## Team decisions on one PR
 
-For GitHub teams, use one draft PR from intent onward when authorized to publish.
-Use the owners and policy established during setup. At a stage gate, show the artifact
-and full commit SHA and identify the decision owner. Provide a handoff for that owner;
-request a review or send a notification only when authorized to do so.
+Follow existing project policy. For GitHub teams, use one draft PR per change when
+publishing is authorized. Human defaults: product/task owner for intent, product/domain
+owner for spec, implementing engineer for a routine plan, teammate for significant risk
+(safety, authentication, public interfaces, migrations or architecture). A person may
+hold several roles; agents cannot self-approve or impersonate owners. Ask only for the
+owner needed now. Default team merge requires one teammate and passing required checks;
+release follows the existing release authority. Notifications and review requests require
+authorization.
 
-A stage comment must explicitly approve the named artifact at the referenced commit.
-Retrieve the actual comment/review and verify its author against the agreed owner,
-its decision and its revision. Compare the approved artifact and upstream policy with
-current content before recording. Save the source URL and exact decision using
-`record-approval`; do not invent evidence or use a label as authorization. If the source
-is inaccessible, role unclear, decision withdrawn or content stale, resolve that gate.
-For chat decisions allowed by project policy, retain the exact human quote and context.
+At each intent/spec/plan gate:
 
-On resume, recheck referenced decisions; continue without asking for unchanged, still
-valid approvals again. New implementation commits alone do not revoke artifact decisions.
-GitHub's final approving review is a separate merge gate; stage comments and fresh agent
-review do not satisfy it. No built-in identity/role enforcement, comment parser or watcher
-is installed: use available tools to inspect evidence and `/sdlc:start` to resume manually.
+1. Commit the artifact. Persist a presentation in the PR or durable decision record
+   containing change ID, stage, path, full commit SHA and revision-pinned artifact link.
+   Ask its owner for `Intent approved`, `Spec approved` or `Plan approved`.
+2. Retrieve the actual response and verify the author's authority. Explicit acceptance
+   must identify the artifact; obvious typos are fine. Generic praise, reactions, labels,
+   checkboxes, commit authors, generated status or a Git merge are not approval. A reply
+   with an unresolved requested change is not approval either.
+3. Bind the response to its presentation through a thread or explicit reference. Never
+   guess the revision from timestamps, current HEAD or unavailable chat. Ask when more
+   than one presentation could match. Compare approved content and upstream policy with
+   current content; stop for stale, withdrawn, inaccessible or unauthorized decisions.
+4. Use `record-approval` with the human, exact quote, and both presentation and response
+   references in `--evidence`; commit the state record. Policy-permitted chat decisions
+   retain the quote and recoverable revision context, clearly identified as chat evidence.
+
+On resume, recheck the sources and reuse unchanged, still-valid decisions. Implementation
+commits alone do not revoke artifact approvals. GitHub's final approving review is a
+separate project merge gate; stage replies and agent review do not satisfy it. Solo and
+non-GitHub projects keep their existing merge/release policy. The helper neither verifies
+identity nor parses comments: the agent inspects sources through available tools.
 
 ## Rules shared by every stage
 
-- Humans own intent, behavior, approach and release judgment. One person can hold
-  several roles. Ask only the responsible person for the decision needed now.
-- Use the existing repository workflow. A single change branch/PR can contain the
-  artifact commits followed by implementation; separate preparation PRs are optional.
-- Approval records store the person's decision, evidence reference, time, commit and
-  SHA-256 of artifacts/policies. They detect stale content; they do not authenticate
-  identity. For team gates use retrievable PR reviews or the team's approval system.
-  For a solo project use the actual explicit chat decision and identify it as such.
-- No agent self-approval. An authorized human driving Claude may approve a routine
-  plan; this is distinct from a teammate's final merge review. No checkbox, label,
-  commit author, generated status or Git merge alone is
-  evidence of a human's intended decision. Resolve inaccessible evidence before proceeding.
-- Changing an upstream artifact or policy invalidates downstream records. Keep history
-  and obtain the changed decision. A result also becomes stale when Git-visible code,
-  its report, or earlier result records change. Never silently repair fingerprints.
-- Commit implementation before final verification/result recording; the helper rejects
-  uncommitted or untracked product files and binds results to the committed code as well
-  as working files. Evidence-only commits do not invalidate results.
-- Results record observed evidence, not guarantees. A `passed` result requires that
-  stage's required checks, independent review or observed delivery actually passed.
-- Stop when a required environment/check is unavailable. Record `blocked` with the
-  specific missing evidence; no green status based only on an agent's assurance.
-- Workflow data lives in the configured changes directory; product code must not live
-  there. Git-ignored/generated outputs are not fingerprinted: reference CI/build IDs
-  and target evidence where needed. Submodule result capture requires a project adapter.
-- Work on one change per worktree/session. Never overwrite another session's state.
-- After learning closes a change, it is a historical record. New incidents start a
-  linked new intent; they do not rewrite the previous change's approved history.
+- Keep artifacts short and create only the next needed one. Link authoritative sources.
+  Work on one change per worktree/session; never overwrite another session's state.
+- Artifact/policy changes invalidate affected downstream records. Code, report or earlier
+  result changes invalidate affected results. Preserve history; never repair fingerprints
+  to hide changes. Records store revisions and hashes, not authenticated authorization.
+- Commit implementation before final verification and result recording, with scoped
+  staging. Staged and tested content must agree. Evidence-only commits do not invalidate
+  results. Preserve unrelated work.
+- A `passed` result needs observed success of every required check for that stage.
+  Record `blocked` with the missing evidence when a required check/environment is
+  unavailable; agent assurance is insufficient.
+- The configured changes directory is evidence-only, never product code. Ignored/generated
+  outputs need CI/build or target evidence references; submodules need a project adapter.
+- Completed changes are historical. New incidents start a linked intent rather than
+  rewriting approved history.
 
-Skills and local files are guidance, not a security boundary. Server-side branch rules,
-required checks, protected environments and permissions remain authoritative. This
-plugin installs no hooks, background jobs, model keys, auto-merge or deployment access.
+Use [stage actions](stages.md) for execution. Existing branch rules, CI, protected
+environments and permissions remain authoritative. No hooks, background jobs, credentials,
+auto-merge or deployment access are installed. The helper never calls models or product commands.
