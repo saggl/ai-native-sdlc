@@ -37,9 +37,9 @@ REVIEW.md; never silently change repository settings.
 
 | Decision | Default owner | Record |
 | --- | --- | --- |
-| Intent: problem, scope and value | Product or delegated task owner | Stage comment naming artifact and commit |
-| Spec: behavior and constraints | Product/domain owner | Stage comment naming artifact and commit |
-| Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit decision on the saved plan |
+| Intent: problem, scope and value | Product or delegated task owner | Explicit approval of the presented intent |
+| Spec: behavior and constraints | Product/domain owner | Explicit approval of the presented spec |
+| Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit approval of the presented plan |
 | Implementation and fixes within scope | Claude, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
 | Merge | One teammate, with required checks passing | GitHub approving review |
 | Release | Existing release authority | Existing release decision |
@@ -52,21 +52,25 @@ For example, a CSV import follows this sequence:
 
 1. Claude saves and commits `changes/csv-import/intent.md`. With permission to push/open
    a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
-2. Share the PR link with the product owner. They comment, for example:
-   `I approve changes/csv-import/intent.md at commit <full SHA>.`
-3. Resume `/sdlc:start`. Claude retrieves that comment, checks its author against the
-   agreed owner and checks the referenced revision, then records the decision and drafts
-   the spec. Repeat for spec and plan, using their respective owners. An authorized
-   engineer's exact chat approval of the saved plan is also usable when team policy allows;
-   retain its quote/context and do not represent it as a GitHub review.
+2. Claude presents that committed revision to the product owner and asks them to reply
+   `Intent approved` or leave feedback.
+3. Resume `/sdlc:start`. Claude retrieves the response, checks its author against the
+   agreed owner and binds the decision to the exact committed intent revision it presented.
+   Repeat with `Spec approved` and `Plan approved`, using their respective owners. Exact
+   wording is not a parser command: obvious typos are acceptable when the approval and
+   artifact are still unambiguous. Generic positive feedback, reactions or approval with
+   an unresolved change request do not count. An authorized engineer's explicit chat
+   approval of the saved plan is also usable when team policy allows; retain its
+   quote/context and do not represent it as a GitHub review.
 4. Claude implements, tests and obtains fresh agent review on the same branch. Material
    scope or behavior changes return to the relevant human decision.
 5. Mark the PR ready and request a teammate's review. They review behavior, evidence,
    findings and relevant code, then choose GitHub **Approve**. Merge only when project
    requirements are met; release through the existing process.
 
-Labels may show progress but do not count as decisions. A stage comment approves only
-its named artifact revision; it does not satisfy GitHub's required approving review.
+Labels may show progress but do not count as decisions. A stage approval must explicitly
+communicate approval and identify the artifact (intent, spec or plan); it does not satisfy
+GitHub's required approving review.
 New code alone does not invalidate unchanged artifact approvals. Changed upstream
 artifacts or policy make affected records stale and require the relevant decisions again.
 GitHub can separately dismiss final PR approvals when the diff changes, depending on
