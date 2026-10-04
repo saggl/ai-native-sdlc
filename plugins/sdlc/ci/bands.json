@@ -1,0 +1,12 @@
+{
+  "_comment": "Tiers by deviation from the baseline: 1 sigma log only; 2 sigma diagnose with the read-only tools listed; 3 sigma propose a fix via pull request or a pre-approved runbook only. metric_command is a project command that writes the metric series (JSON number array, oldest first) to metric.json.",
+  "metric": "ci_test_failure_rate",
+  "metric_command": "<project command that writes metric.json>",
+  "window": 8,
+  "min_points": 20,
+  "tiers": {
+    "log": {},
+    "diagnose": {"tools": "Read,Grep,Bash(gh run view *)"},
+    "propose": {"routes": ["pull_request", "runbook:rollback-deploy"]}
+  }
+}
