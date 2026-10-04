@@ -24,6 +24,9 @@ claude plugin update sdlc@ai-native-sdlc
 ```
 
 Use `/reload-plugins` or a new session. Teams can roll out a tested marketplace/ref.
+Start and resume work with `/sdlc:sdlc <description-or-change-id>`. Ask for status or
+an independent review in the same command, for example `/sdlc:sdlc show status` or
+`/sdlc:sdlc review change <change-id>`.
 
 ### Codex
 
@@ -36,8 +39,9 @@ is available, enable it in `.codex/config.toml`:
 enabled = true
 ```
 
-Invoke the installed `start` skill with your change description, `status` for progress,
-or `review` with a change ID in a fresh session. All load the same bundled workflow.
+Invoke the installed `sdlc` skill for new or resumed work. Include “show status” or
+“review change <id>” when you want those focused actions. The skill reads the current
+state and selects the right path.
 
 ### OpenCode
 
@@ -47,13 +51,14 @@ cd ai-native-sdlc
 python3 scripts/install_opencode.py
 ```
 
-Open a new session in your project and run `/sdlc-start <description>`.
-Use `/sdlc-status` or `/sdlc-review <change-id>` when needed.
+Open a new session in your project and run `/sdlc <description-or-change-id>`.
+For example, use `/sdlc Add CSV import with clear errors for invalid rows`,
+`/sdlc show status` or `/sdlc review change <change-id>`.
 
 After `git pull`, rerun the installer. It installs the shared package in
-`~/.config/opencode/skills/sdlc` and commands in `~/.config/opencode/commands/`.
-It updates its managed commands, refuses conflicting edits, and leaves project files
-and unrelated commands alone.
+`~/.config/opencode/skills/sdlc` and the `/sdlc` command in
+`~/.config/opencode/commands/`. It updates its managed command, refuses conflicting
+edits, and leaves project files and unrelated commands alone.
 
 ## Team workflow
 
@@ -71,7 +76,7 @@ policy; record agreed owners and adaptations in REVIEW.md. One person may hold s
 
 1. The agent saves an artifact and presents a revision-pinned link in the change PR.
 2. Its owner replies to that presentation with approval or feedback. No SHA to type.
-3. Resume `start`. The agent checks the decision and advances to the next stage.
+3. Resume by invoking the same `sdlc` command. The agent checks the decision and advances.
 4. After plan approval, the agent implements, tests and obtains fresh agent review.
 5. Mark the same PR ready for the project's final merge review, then release normally.
 
