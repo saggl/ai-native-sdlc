@@ -1,17 +1,20 @@
 ---
 name: sdlc
-description: Guide a Git change through approved intent, spec and plan, implementation, verification, review, delivery and learning.
+description: Continue an AI-native SDLC change from its current state, or handle a focused status or review request.
 ---
 
-# AI-native SDLC for OpenCode
+# AI-native SDLC entry point
 
-This skill is installed at `~/.config/opencode/skills/sdlc`. The folder containing
-this file is `<plugin-root>`. Work in the user's project, never in this folder.
+This skill is installed as the single user-facing `sdlc` entry point. The folder
+containing this file is `<plugin-root>`. Work in the user's project, never in this
+folder.
 
-For a new or resumed change, read `<plugin-root>/skills/start/SKILL.md`. For progress,
-read `<plugin-root>/skills/status/SKILL.md`. For an independent review, read
-`<plugin-root>/skills/review/SKILL.md`. Follow the selected skill and its bundled
-references, using the current user request as the invocation arguments.
+Read `<plugin-root>/references/workflow.md` and inspect the user's request:
 
-The slash commands `/sdlc-start`, `/sdlc-status` and `/sdlc-review` select these
-paths explicitly. This skill can also be invoked directly for a described change.
+- For new or resumed work, read `<plugin-root>/skills/start/SKILL.md`.
+- For an explicit progress/status request, read `<plugin-root>/skills/status/SKILL.md`.
+- For an explicit independent review, read `<plugin-root>/skills/review/SKILL.md`.
+
+Use the current request as the arguments to that path. If a request combines actions,
+finish the requested focused action and then continue only when the next step is clear.
+Do not require users to remember separate start, status or review commands.
