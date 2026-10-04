@@ -75,9 +75,11 @@ a pass. Review evidence does not authorize merge or release.
 Use the existing host, CI and release process. Update the existing change PR (create
 one only if absent), or its equivalent, linking
 intent/spec/plan, decisions and evidence. Explain behavior, risks, open decisions and
-rollback. When ready, obtain the teammate's final GitHub approving review and required
-checks under the agreed team policy. Stage comments and an agent's review report do not
-replace this decision. A separate preparation PR is optional.
+rollback. For GitHub teams using the agreed teammate merge gate, obtain that teammate's
+final GitHub approving review and required checks. Stage comments and an agent's review
+report do not replace this decision. For solo projects or other hosts, follow the existing
+merge/release policy; do not invent a teammate or GitHub requirement. A separate
+preparation PR is optional.
 
 Within existing authorization, fix actionable review/CI failures and repeat verification
 and fresh review after code changes. Do not change permissions, branch rules, required

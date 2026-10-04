@@ -37,6 +37,14 @@ artifact revision, identify the decision owner and ask for the concise stage res
 `Intent approved`, `Spec approved` or `Plan approved`. Provide a handoff for that
 owner; request a review or send a notification only when authorized to do so.
 
+Persist the presentation in the existing PR or other durable decision record: include the
+change ID, stage, artifact path, full commit SHA and a revision-pinned artifact link.
+Link the owner's reply to that presentation (a thread reply or an explicit reference).
+The owner need not type the SHA. Save both presentation and response references in the
+approval evidence so a fresh session can recover what was reviewed. Do not infer the
+revision from the current PR head, comment timing or an unavailable previous chat. If
+multiple presentations could match a reply, ask which one before recording approval.
+
 A human response counts when it explicitly communicates approval or acceptance and
 identifies the artifact being approved (intent, spec or plan). Exact wording is not
 required; accept obvious spelling mistakes when the meaning remains unambiguous. Do not

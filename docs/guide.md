@@ -52,11 +52,13 @@ For example, a CSV import follows this sequence:
 
 1. Claude saves and commits `changes/csv-import/intent.md`. With permission to push/open
    a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
-2. Claude presents that committed revision to the product owner and asks them to reply
-   `Intent approved` or leave feedback.
+2. Claude saves a presentation in the PR with the change ID, stage, full commit SHA
+   and revision-pinned artifact link, then asks the product owner to reply to that
+   presentation with `Intent approved` or feedback. The owner need not type the SHA.
 3. Resume `/sdlc:start`. Claude retrieves the response, checks its author against the
-   agreed owner and binds the decision to the exact committed intent revision it presented.
-   Repeat with `Spec approved` and `Plan approved`, using their respective owners. Exact
+   agreed owner and binds the decision to the exact revision in the saved presentation.
+   It retains both references; if the reply could refer to multiple revisions, it asks
+   which one rather than guessing from the PR head or timestamps. Repeat with `Spec approved` and `Plan approved`, using their respective owners. Exact
    wording is not a parser command: obvious typos are acceptable when the approval and
    artifact are still unambiguous. Generic positive feedback, reactions or approval with
    an unresolved change request do not count. An authorized engineer's explicit chat
