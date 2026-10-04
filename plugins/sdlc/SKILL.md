@@ -11,9 +11,11 @@ folder.
 
 Read `<plugin-root>/references/workflow.md` and inspect the user's request:
 
-- For new or resumed work, read `<plugin-root>/skills/start/SKILL.md`.
-- For an explicit progress/status request, read `<plugin-root>/skills/status/SKILL.md`.
-- For an explicit independent review, read `<plugin-root>/skills/review/SKILL.md`.
+- For new or resumed work, follow `<plugin-root>/references/workflows/start.md`.
+- For an explicit progress/status request, follow
+  `<plugin-root>/references/workflows/status.md`.
+- For an explicit independent review, follow
+  `<plugin-root>/references/workflows/review.md`.
 
 Use the current request as the arguments to that path. If a request combines actions,
 finish the requested focused action and then continue only when the next step is clear.
