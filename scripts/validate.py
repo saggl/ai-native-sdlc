@@ -34,15 +34,16 @@ def validate():
     command = ROOT / 'opencode/commands/sdlc.md'
     if not command.is_file() or 'Load the `sdlc` skill' not in command.read_text():
         errors.append('Missing OpenCode SDLC command')
+    skill = PLUGIN / 'skills/sdlc/SKILL.md'
+    if not skill.is_file() or not skill.read_text().startswith('---\nname: sdlc\ndescription: '):
+        errors.append('Missing single Claude/Codex SDLC skill')
     for name in ('intent', 'spec', 'plan', 'verification', 'review', 'delivery', 'learning', 'REVIEW'):
         path = PLUGIN / 'templates' / (name + '.md')
         if not path.is_file() or not path.read_text().startswith('# '):
             errors.append(f'Missing/malformed template: {name}')
     for name in ('start', 'status', 'review'):
-        path = PLUGIN / 'skills' / name / 'SKILL.md'
+        path = PLUGIN / 'references/workflows' / (name + '.md')
         text = path.read_text()
-        if not text.startswith(f'---\nname: {name}\ndescription: ') or '\n---\n' not in text[4:]:
-            errors.append(f'Invalid skill frontmatter: {name}')
         if '<plugin-root>' not in text or '${CLAUDE_PLUGIN_ROOT}' not in text:
             errors.append(f'Use resolved bundled paths: {name}')
     for path in ROOT.rglob('*.md'):
