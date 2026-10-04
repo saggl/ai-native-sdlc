@@ -14,7 +14,12 @@ allows. Link existing sources and evidence instead of duplicating them.
    using the team handoff in workflow.md when applicable.
 2. **Spec:** after intent approval, run `draft <id> spec`. Inspect the code and policies.
    Define behavior, failure cases, interfaces and stable `AC-1`, `AC-2` criteria.
-   Resolve blocking concerns with their owner; present behavior for human approval.
+   Apply relevant available domain skills. In spec.md, retain the generation request,
+   model/harness when known, and applied skill/policy paths and versions or hashes.
+   Put repository policy and skill source files in `policy_files` so changes invalidate
+   decisions; record external sources with immutable versions where available. State
+   unavailable provenance rather than inventing it. Resolve blocking concerns with
+   their owner; present behavior for human approval.
 3. **Plan:** after spec approval, run `draft <id> plan`. Use plan mode when available.
    Name real files, ordered steps, risks, relevant alternatives, a check for every AC,
    and delivery/recovery. Present the approach for technical approval. Do not implement
@@ -49,8 +54,9 @@ Record the result, commit scoped evidence, and continue to fresh review after a 
 From the start workflow, delegate to the bundled `sdlc:reviewer` when available. Supply only
 the resolved plugin root, target repository, change folder, approved baseline,
 implementation revision and verification report; do not suggest a verdict. Otherwise
-request a fresh session and stop at that handoff. In Claude Code, use `/sdlc:review <id>`; in OpenCode, use
-`/sdlc-review <id>`; in Codex, invoke the installed `review` skill with the change ID.
+request a fresh session and stop at that handoff. In Claude Code, use `/sdlc:run review change <id>`; in OpenCode, use
+`/sdlc review change <id>`; in Codex, invoke the installed `run` skill with
+“review change <id>”.
 
 Review only if you did not implement the change. Read project instructions, REVIEW.md,
 policies, approved artifacts, state.json and actual decision evidence.

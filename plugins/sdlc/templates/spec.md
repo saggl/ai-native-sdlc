@@ -13,3 +13,6 @@ Source: [intent](intent.md)
 
 ## Concerns and decisions
 <!-- SDLC: Risks, conflicting policies and unresolved decisions with owners; write None when resolved. -->
+
+## Generation context
+<!-- SDLC: Generation request; model/harness when known; applied skill/policy source paths and versions or hashes. Mark unavailable information explicitly. -->

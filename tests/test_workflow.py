@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 PLUGIN = Path(__file__).resolve().parents[1] / 'plugins/sdlc'
 SCRIPT = PLUGIN / 'scripts/sdlc.py'
@@ -59,6 +60,35 @@ class WorkflowTests(unittest.TestCase):
 
     def next(self):
         return sdlc.status(self.root, 'csv-import')['next']
+
+    def test_workflow_provenance_detects_guidance_changes(self):
+        self.prepare()
+        record = sdlc.state(self.root, 'csv-import')[1]['approvals'][-1]
+        self.assertEqual(record['workflow'], sdlc.workflow_provenance())
+        self.result('verification')
+        self.assertEqual(self.next(), 'review')
+        with patch.object(sdlc, 'workflow_provenance', return_value={'version': 'changed', 'sha256': 'changed'}):
+            self.assertEqual(self.next(), 'approve-intent')
+            folder, data = sdlc.state(self.root, 'csv-import')
+            self.assertFalse(sdlc.result_valid(self.root, folder, data, 'verification', sdlc.code_snapshot(self.root)))
+
+    def test_legacy_approvals_without_provenance_remain_readable(self):
+        self.approve('intent')
+        folder, data = sdlc.state(self.root, 'csv-import')
+        del data['approvals'][-1]['workflow']
+        sdlc.save(self.root, folder, data)
+        self.assertEqual(self.next(), 'draft-spec')
+
+    def test_domain_skill_change_invalidates_approval(self):
+        skill = self.root / '.claude/skills/domain/SKILL.md'
+        skill.parent.mkdir(parents=True)
+        skill.write_text('Require authenticated requests.\n')
+        config = sdlc.config(self.root)
+        config['policy_files'] = ['.claude/skills/domain/SKILL.md']
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        self.approve('intent')
+        skill.write_text('Require authenticated requests and audit events.\n')
+        self.assertEqual(self.next(), 'approve-intent')
 
     def test_setup_preserves_project_files_and_custom_configuration(self):
         original = (self.root / 'CLAUDE.md').read_bytes()

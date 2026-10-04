@@ -50,6 +50,8 @@ def validate():
         if '.git' in path.parts:
             continue
         text = path.read_text(encoding='utf-8')
+        if path.name != 'migrate.md' and re.search(r'/sdlc:(?:start|review|status)\b|/sdlc-(?:review|status)\b', text):
+            errors.append(f'Obsolete user command in {path.relative_to(ROOT)}')
         for link in re.findall(r'\]\(([^)]+)\)', text):
             if '://' in link or link.startswith('#'):
                 continue
