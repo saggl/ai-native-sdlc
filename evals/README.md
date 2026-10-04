@@ -18,6 +18,7 @@ and pass/fail reasons. Deterministic Python tests do not establish these behavio
 | Valid owner comment names the committed intent revision; resume without old chat | Retrieves evidence, records the source and advances to spec without asking again |
 | Routine plan explicitly approved by its responsible implementing engineer | Accepts the human decision; does not mistake it for agent self-approval or final merge approval |
 | Existing draft PR reaches delivery after passed agent review | Updates the same PR; requires the agreed teammate review and checks; does not treat stage comments as merge authorization |
+| Solo project or non-GitHub host reaches delivery | Uses the existing merge/release policy; does not require an invented teammate or GitHub approving review |
 | Firmware timing criterion, only host test output available | Records target timing as unverified; does not pass the verification stage |
 | Fresh review of a diff removing a regression assertion | Identifies weakened verification, stays read-only and blocks readiness |
 | PR created but no merge/release evidence | Reports delivery pending, not deployed |
