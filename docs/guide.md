@@ -1,99 +1,99 @@
-# Team setup and maintenance
+# Setup and maintenance
 
 ## Adopt and update
 
-Start with one real change in an existing or empty Git repository using the README.
-Claude discovers project commands and preserves existing instructions. One person can
-own several decisions; team approvals use the existing review system.
+Start with one real change. The agent discovers project commands and preserves existing
+instructions. Shared workflow updates leave project decisions and configuration intact.
+Existing 0.2 records need no migration; copied 0.1 packages use the
+[migration instructions](../plugins/sdlc/references/migrate.md).
 
-For a shared project, run these in its directory:
+### Claude Code
+
+For a shared project, run in its directory:
 
 ```bash
 claude plugin marketplace add saggl/ai-native-sdlc
 claude plugin install sdlc@ai-native-sdlc --scope project
 ```
 
-Review and commit the generated plugin settings. Collaborators need repository access
-and a local install. For wider use, grant access or use an approved internal marketplace.
-
-Update from a terminal:
+Review and commit the generated settings; teammates install locally. To update:
 
 ```bash
 claude plugin marketplace update ai-native-sdlc
 claude plugin update sdlc@ai-native-sdlc
 ```
 
-Use `/reload-plugins` or a new session. Updates change the shared plugin, not the
-project's decisions or configuration. Teams can roll out a tested marketplace/ref.
-For the old copied 0.1 package, follow the [migration instructions](../plugins/sdlc/references/migrate.md).
-Existing 0.2 records need no migration.
+Use `/reload-plugins` or a new session. Teams can roll out a tested marketplace/ref.
+
+### Codex
+
+Run `codex plugin marketplace add saggl/ai-native-sdlc`, then install `sdlc` from
+that source in the ChatGPT desktop Plugins Directory. Where the repository marketplace
+is available, enable it in `.codex/config.toml`:
+
+```toml
+[plugins."sdlc@ai-native-sdlc"]
+enabled = true
+```
+
+Invoke the installed `start` skill with your change description, `status` for progress,
+or `review` with a change ID in a fresh session. All load the same bundled workflow.
+
+### OpenCode
+
+```bash
+git clone https://github.com/saggl/ai-native-sdlc.git
+cd ai-native-sdlc
+python3 scripts/install_opencode.py
+```
+
+Open a new session in your project and run `/sdlc-start <description>`.
+Use `/sdlc-status` or `/sdlc-review <change-id>` when needed.
+
+After `git pull`, rerun the installer. It installs the shared package in
+`~/.config/opencode/skills/sdlc` and commands in `~/.config/opencode/commands/`.
+It updates its managed commands, refuses conflicting edits, and leaves project files
+and unrelated commands alone.
 
 ## Team workflow
 
-Use one branch and PR per change, from the first intent through implementation.
-Agree on the owners during setup; one person can hold several roles. These are starting
-defaults for teams. Preserve existing project policy and record agreed adaptations in
-REVIEW.md; never silently change repository settings.
+Use one branch and draft PR from intent through implementation. Follow existing project
+policy; record agreed owners and adaptations in REVIEW.md. One person may hold several roles.
 
-| Decision | Default owner | Record |
+| Decision | Default owner | Action |
 | --- | --- | --- |
-| Intent: problem, scope and value | Product or delegated task owner | Stage comment naming artifact and commit |
-| Spec: behavior and constraints | Product/domain owner | Stage comment naming artifact and commit |
-| Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit decision on the saved plan |
-| Implementation and fixes within scope | Claude, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
-| Merge | One teammate, with required checks passing | GitHub approving review |
-| Release | Existing release authority | Existing release decision |
+| Intent | Product or delegated task owner | Reply `Intent approved` |
+| Spec | Product/domain owner | Reply `Spec approved` |
+| Plan | Implementing engineer; teammate for significant risk | Reply `Plan approved` |
+| Implementation within scope | Agent, with tests and fresh review | No per-edit human approval |
+| Merge | Teammate, with required checks passing | GitHub **Approve** |
+| Release | Existing release authority | Existing release process |
 
-The engineer driving Claude can approve a routine plan. Claude cannot approve its own
-work or impersonate that engineer. Escalate significant risk such as changed safety
-behavior, authentication, public interfaces, data migrations or architecture.
+1. The agent saves an artifact and presents a revision-pinned link in the change PR.
+2. Its owner replies to that presentation with approval or feedback. No SHA to type.
+3. Resume `start`. The agent checks the decision and advances to the next stage.
+4. After plan approval, the agent implements, tests and obtains fresh agent review.
+5. Mark the same PR ready for the project's final merge review, then release normally.
 
-For example, a CSV import follows this sequence:
+Intent, spec and plan remain sequential decisions. A stage reply is not a merge approval;
+labels and generic “looks good” do not count. Changed decisions need approval again;
+new code alone does not revoke unchanged artifact decisions. Solo projects and other
+hosts keep their existing merge/release policy.
 
-1. Claude saves and commits `changes/csv-import/intent.md`. With permission to push/open
-   a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
-2. Share the PR link with the product owner. They comment, for example:
-   `I approve changes/csv-import/intent.md at commit <full SHA>.`
-3. Resume `/sdlc:start`. Claude retrieves that comment, checks its author against the
-   agreed owner and checks the referenced revision, then records the decision and drafts
-   the spec. Repeat for spec and plan, using their respective owners. An authorized
-   engineer's exact chat approval of the saved plan is also usable when team policy allows;
-   retain its quote/context and do not represent it as a GitHub review.
-4. Claude implements, tests and obtains fresh agent review on the same branch. Material
-   scope or behavior changes return to the relevant human decision.
-5. Mark the PR ready and request a teammate's review. They review behavior, evidence,
-   findings and relevant code, then choose GitHub **Approve**. Merge only when project
-   requirements are met; release through the existing process.
-
-Labels may show progress but do not count as decisions. A stage comment approves only
-its named artifact revision; it does not satisfy GitHub's required approving review.
-New code alone does not invalidate unchanged artifact approvals. Changed upstream
-artifacts or policy make affected records stale and require the relevant decisions again.
-GitHub can separately dismiss final PR approvals when the diff changes, depending on
-branch settings. See [GitHub reviews](https://docs.github.com/en/pull-requests/reference/pull-request-reviews)
-and [branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
-
-The current helper records evidence and detects changed content. Claude inspects approval
-sources through available tools; there is no built-in GitHub identity/role enforcement,
-comment parser or background watcher. If evidence is inaccessible or the approver's role
-is unclear, stop at that decision. Resume manually with `/sdlc:start` after a response.
-Intent, spec and plan remain separate sequential decisions in this version.
+The agent checks identity and revision through available tools; the helper is not an
+authentication service or background watcher. See the bundled
+[approval rules](../plugins/sdlc/references/workflow.md#team-decisions-on-one-pr)
+for exact evidence and ambiguity handling.
 
 ## Extend when needed
 
-Keep project commands and recurring mistakes in CLAUDE.md. Put reusable domain policy
-in project/company skills. Link authoritative Jira, Polarion or Teamcenter records;
-do not copy their contents into a second source of truth.
+Keep commands and recurring lessons in project agent instructions; reusable domain policy
+belongs in skills. Link authoritative Jira, Polarion or Teamcenter records instead of
+copying them. For embedded work, keep host, cross-build, simulation and target/HIL evidence
+distinct. Delivery may mean a firmware artifact handoff; required hardware checks still apply.
 
-For embedded work, distinguish host tests, cross-build, simulation and target/HIL
-evidence. A firmware delivery can be an agreed artifact handoff. Missing required
-hardware evidence remains a blocker.
-
-The helper creates files, records decisions and checks for stale inputs. Claude uses
-the project's tools to build, test, review, deliver and observe. The helper never calls
-a model or executes product commands. Skills and local records are not access controls:
-authenticated approvals, branch rules, CI and protected environments belong to the project.
-No hooks, credentials, background runner or automatic merge/deploy policy are installed.
+Add integrations only for a demonstrated need. No hooks, credentials, background runner
+or automatic merge/deploy policy are installed.
 
 ## Validate a change
 
@@ -102,29 +102,13 @@ python3 scripts/validate.py
 python3 -m unittest discover -s tests -v
 ```
 
-The tests exercise real Git repositories: setup preservation, resume, changed decisions,
-stale evidence, filesystem boundaries and lifecycle completion. CI runs them on Linux,
-Windows and macOS. Passing Python tests does not prove agent behavior.
-
-Use the [behavior evaluations](../evals/README.md) for instruction changes. Test in
-Claude Code from a disposable project:
-
-```bash
-claude --plugin-dir /absolute/path/to/ai-native-sdlc/plugins/sdlc
-```
-
-Run `/sdlc:start` through a small real task. Check native installation, permissions,
-reviewer delegation and delivery with the intended tools. Record observed results and
-unavailable checks in the PR. Bump `plugins/sdlc/.claude-plugin/plugin.json` for release.
+Tests cover real Git repositories, stale evidence, data preservation and installer updates.
+CI runs on Linux, Windows and macOS. For agent behavior and native installation, use the
+[behavior evaluations](../evals/README.md); Python tests alone do not prove those work.
+Record results and unavailable checks in the PR. Keep both plugin manifest versions aligned.
 
 ## Basis
 
 This independent implementation follows
-[Anthropic's playbook](https://claude.com/blog/the-ai-native-sdlc-playbook):
-committed decisions, human judgment, feedback loops and learning feeding the next intent.
-The command names, folder layout and local records are this project's choices.
-
-Packaging references: [plugins](https://code.claude.com/docs/en/plugins),
-[marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
-[skills](https://code.claude.com/docs/en/skills) and
-[plugin CLI](https://code.claude.com/docs/en/plugins/cli-reference).
+[Anthropic's playbook](https://claude.com/blog/the-ai-native-sdlc-playbook).
+Command names, folder layout and local records are this project's choices.

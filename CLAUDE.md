@@ -1,6 +1,7 @@
 # AI-native SDLC plugin
 
-This repository distributes a self-contained Claude Code plugin in `plugins/sdlc`.
+This repository distributes one shared workflow for Claude Code, Codex and OpenCode
+in `plugins/sdlc`.
 Read README.md and plugins/sdlc/references/workflow.md.
 
 Python 3.10+, Git, standard library only.
@@ -9,7 +10,7 @@ Python 3.10+, Git, standard library only.
 
 ## Keep the essentials
 
-- Keep /sdlc:start as the main path; Claude handles setup and stage transitions.
+- Keep start as the main path; the agent handles setup and stage transitions.
 - Prefer removing or simplifying before adding. Every file, command and abstraction
   must support a concrete user need.
 - Give each instruction one authoritative home. Link it instead of repeating it.
@@ -21,5 +22,5 @@ stale decisions, stale evidence and filesystem boundaries. Local records do not
 authenticate approval; unavailable checks stay unverified.
 
 Run the checks above after changes. Use evals/README.md for workflow evaluations and
-state whether a real Claude Code runtime was exercised. Put validation results in the
+state which native agent runtimes were exercised. Put validation results in the
 PR, not another permanent report.

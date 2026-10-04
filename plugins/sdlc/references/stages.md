@@ -21,11 +21,8 @@ allows. Link existing sources and evidence instead of duplicating them.
    product code yet. If plan mode prevents saving, request the needed mode change;
    leaving plan mode is not approval of an unseen artifact.
 
-Commit the exact reviewed artifact before `record-approval`; then commit its state
-record. Preserve the actual human's decision, quote/context or retrievable review,
-source task and policy references. Never infer approval from generated fields or a
-commit author. Reuse evidenced approval for unchanged content; get a new decision for
-changed content. After plan approval, proceed within the approved scope and permissions.
+Use the [approval procedure](workflow.md#team-decisions-on-one-pr) at each handoff.
+After plan approval, proceed within the approved scope and permissions.
 
 ## Build: implement-and-verify
 
@@ -49,17 +46,19 @@ Record the result, commit scoped evidence, and continue to fresh review after a 
 
 ## Review: review
 
-For `/sdlc:start`, delegate to the bundled `sdlc:reviewer` when available. Supply only
-the target repository, change folder, approved baseline, implementation revision and
-verification report; do not suggest a verdict. Otherwise request a fresh session with
-`/sdlc:review <id>` and stop at that handoff.
+From the start workflow, delegate to the bundled `sdlc:reviewer` when available. Supply only
+the resolved plugin root, target repository, change folder, approved baseline,
+implementation revision and verification report; do not suggest a verdict. Otherwise
+request a fresh session and stop at that handoff. In Claude Code, use `/sdlc:review <id>`; in OpenCode, use
+`/sdlc-review <id>`; in Codex, invoke the installed `review` skill with the change ID.
 
-For `/sdlc:review`, review yourself only if you did not implement the change. Read project
-instructions, REVIEW.md, policies, approved artifacts and actual decision evidence.
+Review only if you did not implement the change. Read project instructions, REVIEW.md,
+policies, approved artifacts, state.json and actual decision evidence.
 Inspect the complete relevant diff and surrounding code, including untracked work.
 Check logic, security, compatibility, every AC, test strength and plan deviations.
 Re-run relevant safe checks; distinguish observations from the author's claims.
-Do not edit product code while reviewing.
+Do not edit source, tests, policy, approval records or release configuration while
+reviewing. Safe tests may create ordinary build outputs.
 
 Write review.md from its template: reviewed revision/files, fresh-session provenance,
 findings, criterion evidence and limitations. Missing required evidence, material
@@ -75,11 +74,7 @@ a pass. Review evidence does not authorize merge or release.
 Use the existing host, CI and release process. Update the existing change PR (create
 one only if absent), or its equivalent, linking
 intent/spec/plan, decisions and evidence. Explain behavior, risks, open decisions and
-rollback. For GitHub teams using the agreed teammate merge gate, obtain that teammate's
-final GitHub approving review and required checks. Stage comments and an agent's review
-report do not replace this decision. For solo projects or other hosts, follow the existing
-merge/release policy; do not invent a teammate or GitHub requirement. A separate
-preparation PR is optional.
+rollback. Apply the [project merge gate](workflow.md#team-decisions-on-one-pr).
 
 Within existing authorization, fix actionable review/CI failures and repeat verification
 and fresh review after code changes. Do not change permissions, branch rules, required
@@ -102,3 +97,4 @@ policy or code, repeat affected decisions, verification and review before closin
 
 Record learning as `passed` only after observation and triage, even if the product
 outcome was below target. Completion preserves history; follow-up work gets a new intent.
+
