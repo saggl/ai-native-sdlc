@@ -24,22 +24,22 @@ claude plugin update sdlc@ai-native-sdlc
 ```
 
 Use `/reload-plugins` or a new session. Teams can roll out a tested marketplace/ref.
-Start and resume work with `/sdlc:sdlc <description-or-change-id>`. Ask for status or
-an independent review in the same command, for example `/sdlc:sdlc show status` or
-`/sdlc:sdlc review change <change-id>`.
+Start and resume work with `/sdlc:run <description-or-change-id>`. Ask for status or
+an independent review in the same command, for example `/sdlc:run show status` or
+`/sdlc:run review change <change-id>`.
 
 ### Codex
 
-Run `codex plugin marketplace add saggl/ai-native-sdlc`, then install `sdlc` from
-that source in the ChatGPT desktop Plugins Directory. Where the repository marketplace
-is available, enable it in `.codex/config.toml`:
+Run `codex plugin marketplace add saggl/ai-native-sdlc`, then install the `run` skill
+from that source in the ChatGPT desktop Plugins Directory. Where the repository
+marketplace is available, enable it in `.codex/config.toml`:
 
 ```toml
 [plugins."sdlc@ai-native-sdlc"]
 enabled = true
 ```
 
-Invoke the installed `sdlc` skill for new or resumed work. Include “show status” or
+Invoke the installed `run` skill for new or resumed work. Include “show status” or
 “review change <id>” when you want those focused actions. The skill reads the current
 state and selects the right path.
 
