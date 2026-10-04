@@ -29,7 +29,7 @@ pointer to the project's active agent instructions (such as CLAUDE.md or AGENTS.
 using that agent's start entry point from the installed skill. Mention .sdlc/project.json
 and the configured changes directory. Add verified commands and recurring mistakes if
 missing; keep instructions short. Never replace project rules.
-Use the bundled REVIEW.md template only if no review policy exists; adapt it to the
+Use the bundled `templates/review-policy.md` as REVIEW.md only if no review policy exists; adapt it to the
 actual product. Resolve conflicting policy with its owner.
 
 Show a brief setup summary and any decision that blocks the task, then capture its

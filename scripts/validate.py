@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import re
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins/sdlc'
@@ -37,7 +38,7 @@ def validate():
     skill = PLUGIN / 'skills/run/SKILL.md'
     if not skill.is_file() or not skill.read_text().startswith('---\nname: run\ndescription: '):
         errors.append('Missing single Claude/Codex SDLC skill')
-    for name in ('intent', 'spec', 'plan', 'verification', 'review', 'delivery', 'learning', 'REVIEW'):
+    for name in ('intent', 'spec', 'plan', 'verification', 'review', 'delivery', 'learning', 'review-policy'):
         path = PLUGIN / 'templates' / (name + '.md')
         if not path.is_file() or not path.read_text().startswith('# '):
             errors.append(f'Missing/malformed template: {name}')
@@ -50,7 +51,7 @@ def validate():
         if '.git' in path.parts:
             continue
         text = path.read_text(encoding='utf-8')
-        if path.name != 'migrate.md' and re.search(r'/sdlc:(?:start|review|status)\b|/sdlc-(?:review|status)\b', text):
+        if re.search(r'/sdlc:(?:start|review|status)\b|/sdlc-(?:review|status)\b', text):
             errors.append(f'Obsolete user command in {path.relative_to(ROOT)}')
         for link in re.findall(r'\]\(([^)]+)\)', text):
             if '://' in link or link.startswith('#'):
@@ -64,7 +65,22 @@ def validate():
             if '.sdlc/templates' in text or '.sdlc/workflow.md' in text:
                 if path.name != 'migrate.md':
                     errors.append(f'Legacy runtime dependency: {path.relative_to(ROOT)}')
+    errors += case_collisions(tracked_files())
     return errors
+
+
+def tracked_files():
+    out = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-z'], capture_output=True, check=True).stdout
+    return [name for name in out.decode().split('\0') if name]
+
+
+def case_collisions(paths):
+    # Two names differing only by case overwrite each other on macOS and Windows checkouts.
+    seen = {}
+    for path in paths:
+        seen.setdefault(path.lower(), []).append(path)
+    return [f'Case-insensitive path collision: {", ".join(names)}'
+            for names in seen.values() if len(names) > 1]
 
 
 if __name__ == '__main__':
