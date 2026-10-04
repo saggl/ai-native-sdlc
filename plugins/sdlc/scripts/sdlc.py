@@ -89,7 +89,7 @@ def setup(root):
         return config(root)
     legacy = safe_path(root, '.sdlc/package-lock.json')
     if legacy.exists():
-        raise ValueError('Legacy copied package found. Follow docs/adoption.md migration first.')
+        raise ValueError('Legacy copied package found. Follow the installed plugin references/migrate.md first.')
     safe_path(root, 'changes')
     data = {'schema': 1, 'created_with': VERSION, 'changes_dir': 'changes',
             'commands': {}, 'policy_files': [], 'owners': {},

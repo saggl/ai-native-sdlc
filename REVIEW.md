@@ -11,3 +11,6 @@ impact and location. Distinguish model guidance, bookkeeping and real server-sid
 Check that only plugin-contained resources are required after installation. Keep setup
 idempotent and credentials out of the package. Review changes to instructions and tests
 as carefully as executable code. Report optional improvements separately; cap nits at five.
+
+Question added files, commands and abstractions: does a current task need them?
+Prefer one authoritative instruction over repeated guidance.
