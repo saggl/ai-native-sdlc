@@ -15,3 +15,6 @@ Sources: [intent](intent.md), [spec](spec.md)
 
 ## Delivery and recovery
 <!-- SDLC: Existing PR/CI/release process, authorization and rollback; no invented commands. -->
+
+## Implementation deviations
+<!-- SDLC: Harmless departures from this plan with the reason, in the same commit; material ones go back to approval. -->

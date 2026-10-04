@@ -4,7 +4,7 @@
 <!-- SDLC: Approved artifact revisions, current diff, reviewer/fresh-session identity and evidence sources. -->
 
 ## Findings and criterion coverage
-<!-- SDLC: Location, severity, demonstrated impact and evidence; map each AC and inspect test integrity. -->
+<!-- SDLC: Location, severity, demonstrated impact and evidence; map each AC and inspect test integrity. End with `Tally: important=N nit=N`. -->
 
 ## Checks and limitations
 <!-- SDLC: Commands personally run versus supplied logs, unavailable checks and resolved/unresolved findings. -->

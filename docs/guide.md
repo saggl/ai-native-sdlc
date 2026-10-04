@@ -99,8 +99,43 @@ belongs in skills. Link authoritative Jira, Polarion or Teamcenter records inste
 copying them. For embedded work, keep host, cross-build, simulation and target/HIL evidence
 distinct. Delivery may mean a firmware artifact handoff; required hardware checks still apply.
 
-Add integrations only for a demonstrated need. No hooks, credentials, background runner
-or automatic merge/deploy policy are installed.
+Add integrations only for a demonstrated need. Nothing is active by default, and no
+credentials or automatic merge/deploy policy are installed.
+
+### Opt-in hooks and CI
+
+After setup the agent offers one short question about hooks and CI templates. On your
+explicit yes it runs `install <hooks|evals|review|handoff|monitor>`: `hooks` copies the
+guard to `.claude/hooks/sdlc-guard.py` and merges entries into `.claude/settings.json`;
+the others copy `ci/<name>.yml` to `.github/workflows/sdlc-<name>.yml` (`monitor` also
+`.sdlc/bands.py` and `bands.json`). Existing files are never overwritten. Guard rules
+come from `protected_paths`, `gates` and `commands.format` in `.sdlc/project.json`.
+Non-negotiable gates belong in managed settings owned by platform/IT.
+
+## Playbook coverage
+
+Claude-first. On Codex and OpenCode, hook and CI checks fall back to the review gate.
+Hosted products (Claude Security, Claude Tag, managed Code Review, Claude Design) are
+integrated by intake, not reimplemented.
+
+| Play | Asset | Notes |
+| --- | --- | --- |
+| Capture as intent.md | [intent template](../plugins/sdlc/templates/intent.md) | `new --adopt` registers intents from connectors, scans and Tag |
+| Requirements and design | [spec stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-), [handoff template](../plugins/sdlc/ci/handoff.yml) | Link the Claude Design mock for front-end work; `install handoff` drafts spec PRs when an intent approval merges |
+| Plan mode | [plan stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-) | Deviations go in plan.md `## Implementation deviations` |
+| Auto mode | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Routine work after plan approval; artifacts reviewed afterwards |
+| CLAUDE.md | [setup](../plugins/sdlc/references/setup.md) | Commands and recurring mistakes; repeated review flags land here |
+| Skills as institutional knowledge | [spec stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-) | Skill paths in `policy_files` join approval snapshots |
+| Hooks as build-time guardrails | [guard](../plugins/sdlc/hooks/guard.py) | Opt-in via `install hooks`; protected paths, locked tests, format |
+| Parallel sessions and subagents | [verifier](../plugins/sdlc/agents/verifier.md) | `claude --worktree` sessions; fresh-context verifier |
+| Feedback loop | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Failing test first, then `lock-tests` |
+| Continuous evals in CI | [evals template](../plugins/sdlc/ci/evals.yml) | Opt-in via `install evals` |
+| AI in the PR review loop | [review policy](../plugins/sdlc/templates/review-policy.md) | Bugs, Security, Compliance; `Tally:` line; `install review` adds claude-code-action review, `@claude` fixes and failed-build triage, or enable managed Code Review |
+| Hooks as approval gates | [guard](../plugins/sdlc/hooks/guard.py) | `gates` in project.json; managed settings for non-negotiable gates |
+| CI/CD integration and deployment | [deliver stage](../plugins/sdlc/references/stages.md#deliver-deliver) | Autonomy by environment; one rehearsed rollback; PR-only writes |
+| Closing the loop | [monitor template](../plugins/sdlc/ci/monitor.yml), [bands](../plugins/sdlc/scripts/bands.py) | Opt-in via `install monitor`; deterministic bands: 1σ log, 2σ read-only diagnosis, 3σ intent PR |
+| Recurring codebase scans | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Claude Security scans; bounded fix is a patch PR, wider finding an adopted intent, dismissals need a reason |
+| Claude on call with Claude Tag | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Tag, channel and ticket requests enter by the same intake; post-mortem in learning.md |
 
 ## Validate a change
 
@@ -115,6 +150,9 @@ CI runs on Linux, Windows and macOS. For agent behavior and native installation,
 The opt-in `evals/run.py` runs
 two initial-gate smoke cases through a supplied agent CLI; it does not replace native
 installation or full lifecycle evaluations.
+Version 0.4.0 changes the workflow hash scope, so open records show `workflow_changed`
+once and the agent rechecks them. The policy template is now `review-policy.md`; an
+existing project REVIEW.md is untouched.
 Record results and unavailable checks in the PR. Keep both plugin manifest versions aligned.
 
 ## Basis
