@@ -57,6 +57,14 @@ blocker. Each approval applies to the saved content you reviewed.
 Resume with your agent's start entry point. Use its status and review entry points;
 run review in a fresh session.
 
+## Working as a team
+
+Use one PR per change. Name the decision owners and use explicit stage replies such as
+`Intent approved`, `Spec approved` and `Plan approved`; The agent binds each decision to
+the committed artifact revision it presented. Use GitHub **Approve** for the final merge
+review. The implementing engineer can approve a routine plan; significant risk needs a
+teammate. See the [team workflow](docs/guide.md#team-workflow) for roles and an example.
+
 ## Keep it small
 
 Use short artifacts. Create them only when needed. Link existing evidence instead of
@@ -72,3 +80,4 @@ project-specific integrations.
 
 [Team setup and maintenance](docs/guide.md) ·
 [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook)
+

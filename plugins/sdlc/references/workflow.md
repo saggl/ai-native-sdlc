@@ -29,6 +29,40 @@ artifacts and records at handoffs, using explicitly scoped staging; preserve unr
 work. A new repo can start with no commits; reviewed artifacts must be committed before
 an approval is recorded. Git history, not a shared example project, holds the decisions.
 
+## Team decisions on one PR
+
+For GitHub teams, use one draft PR from intent onward when authorized to publish.
+Use the owners and policy established during setup. At a stage gate, present the committed
+artifact revision, identify the decision owner and ask for the concise stage response
+`Intent approved`, `Spec approved` or `Plan approved`. Provide a handoff for that
+owner; request a review or send a notification only when authorized to do so.
+
+Persist the presentation in the existing PR or other durable decision record: include the
+change ID, stage, artifact path, full commit SHA and a revision-pinned artifact link.
+Link the owner's reply to that presentation (a thread reply or an explicit reference).
+The owner need not type the SHA. Save both presentation and response references in the
+approval evidence so a fresh session can recover what was reviewed. Do not infer the
+revision from the current PR head, comment timing or an unavailable previous chat. If
+multiple presentations could match a reply, ask which one before recording approval.
+
+A human response counts when it explicitly communicates approval or acceptance and
+identifies the artifact being approved (intent, spec or plan). Exact wording is not
+required; accept obvious spelling mistakes when the meaning remains unambiguous. Do not
+infer approval from generic positive feedback, reactions, labels, or a response that also
+requests an unresolved change. Retrieve the actual comment/review and verify its author
+against the agreed owner. Bind the decision to the exact committed artifact revision that
+was presented, then compare that artifact and upstream policy with current content before
+recording. Save the source URL and exact decision using `record-approval`; do not invent
+evidence. If the source is inaccessible, role unclear, decision withdrawn or content
+stale, resolve that gate. For chat decisions allowed by project policy, retain the exact
+human quote and context.
+
+On resume, recheck referenced decisions; continue without asking for unchanged, still
+valid approvals again. New implementation commits alone do not revoke artifact decisions.
+GitHub's final approving review is a separate merge gate; stage comments and fresh agent
+review do not satisfy it. No built-in identity/role enforcement, comment parser or watcher
+is installed: use available tools to inspect evidence and the agent's start entry point to resume manually.
+
 ## Rules shared by every stage
 
 - Humans own intent, behavior, approach and release judgment. One person can hold
@@ -39,7 +73,9 @@ an approval is recorded. Git history, not a shared example project, holds the de
   SHA-256 of artifacts/policies. They detect stale content; they do not authenticate
   identity. For team gates use retrievable PR reviews or the team's approval system.
   For a solo project use the actual explicit chat decision and identify it as such.
-- No self-approval. No checkbox, commit author, generated status or Git merge alone is
+- No agent self-approval. An authorized human driving the agent may approve a routine
+  plan; this is distinct from a teammate's final merge review. No checkbox, label,
+  commit author, generated status or Git merge alone is
   evidence of a human's intended decision. Resolve inaccessible evidence before proceeding.
 - Changing an upstream artifact or policy invalidates downstream records. Keep history
   and obtain the changed decision. A result also becomes stale when Git-visible code,
@@ -61,3 +97,4 @@ an approval is recorded. Git history, not a shared example project, holds the de
 Skills and local files are guidance, not a security boundary. Server-side branch rules,
 required checks, protected environments and permissions remain authoritative. This
 plugin installs no hooks, background jobs, model keys, auto-merge or deployment access.
+

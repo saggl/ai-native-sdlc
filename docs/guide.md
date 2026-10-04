@@ -31,7 +31,13 @@ Existing 0.2 records need no migration.
 For Codex, the repository's `.agents/plugins/marketplace.json` points to the same
 `plugins/sdlc` package. Add the repository as a plugin marketplace and install `sdlc`
 in the ChatGPT desktop Plugins Directory. In a project where its repo marketplace is
-available, set `[plugins."sdlc@ai-native-sdlc"] enabled = true` in `.codex/config.toml`.
+available, add this to `.codex/config.toml`:
+
+```toml
+[plugins."sdlc@ai-native-sdlc"]
+enabled = true
+```
+
 The installed `start`, `status` and `review` skills load the same workflow references.
 
 For OpenCode, clone the repository and run `python3 scripts/install_opencode.py`.
@@ -39,6 +45,63 @@ This copies the package to `~/.config/opencode/skills/sdlc` and the three comman
 to `~/.config/opencode/commands/`. Run it again after `git pull`; it does not modify
 project files or unrelated commands. OpenCode's JS/TS plugin hooks are unnecessary
 for a workflow made of agent skills, slash commands and a local Python helper.
+
+## Team workflow
+
+Use one branch and PR per change, from the first intent through implementation.
+Agree on the owners during setup; one person can hold several roles. These are starting
+defaults for teams. Preserve existing project policy and record agreed adaptations in
+REVIEW.md; never silently change repository settings.
+
+| Decision | Default owner | Record |
+| --- | --- | --- |
+| Intent: problem, scope and value | Product or delegated task owner | Explicit approval of the presented intent |
+| Spec: behavior and constraints | Product/domain owner | Explicit approval of the presented spec |
+| Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit approval of the presented plan |
+| Implementation and fixes within scope | The agent, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
+| Merge | One teammate, with required checks passing | GitHub approving review |
+| Release | Existing release authority | Existing release decision |
+
+The engineer driving the agent can approve a routine plan. The agent cannot approve its own
+work or impersonate that engineer. Escalate significant risk such as changed safety
+behavior, authentication, public interfaces, data migrations or architecture.
+
+For example, a CSV import follows this sequence:
+
+1. The agent saves and commits `changes/csv-import/intent.md`. With permission to push/open
+   a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
+2. The agent saves a presentation in the PR with the change ID, stage, full commit SHA
+   and revision-pinned artifact link, then asks the product owner to reply to that
+   presentation with `Intent approved` or feedback. The owner need not type the SHA.
+3. Resume the agent's start entry point. The agent retrieves the response, checks its author against the
+   agreed owner and binds the decision to the exact revision in the saved presentation.
+   It retains both references; if the reply could refer to multiple revisions, it asks
+   which one rather than guessing from the PR head or timestamps. Repeat with `Spec approved` and `Plan approved`, using their respective owners. Exact
+   wording is not a parser command: obvious typos are acceptable when the approval and
+   artifact are still unambiguous. Generic positive feedback, reactions or approval with
+   an unresolved change request do not count. An authorized engineer's explicit chat
+   approval of the saved plan is also usable when team policy allows; retain its
+   quote/context and do not represent it as a GitHub review.
+4. The agent implements, tests and obtains fresh agent review on the same branch. Material
+   scope or behavior changes return to the relevant human decision.
+5. Mark the PR ready and request a teammate's review. They review behavior, evidence,
+   findings and relevant code, then choose GitHub **Approve**. Merge only when project
+   requirements are met; release through the existing process.
+
+Labels may show progress but do not count as decisions. A stage approval must explicitly
+communicate approval and identify the artifact (intent, spec or plan); it does not satisfy
+GitHub's required approving review.
+New code alone does not invalidate unchanged artifact approvals. Changed upstream
+artifacts or policy make affected records stale and require the relevant decisions again.
+GitHub can separately dismiss final PR approvals when the diff changes, depending on
+branch settings. See [GitHub reviews](https://docs.github.com/en/pull-requests/reference/pull-request-reviews)
+and [branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+
+The current helper records evidence and detects changed content. The agent inspects approval
+sources through available tools; there is no built-in GitHub identity/role enforcement,
+comment parser or background watcher. If evidence is inaccessible or the approver's role
+is unclear, stop at that decision. Resume manually with the agent's start entry point after a response.
+Intent, spec and plan remain separate sequential decisions in this version.
 
 ## Extend when needed
 
@@ -90,3 +153,4 @@ Packaging references: [plugins](https://code.claude.com/docs/en/plugins),
 [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces),
 [skills](https://code.claude.com/docs/en/skills) and
 [plugin CLI](https://code.claude.com/docs/en/plugins/cli-reference).
+
