@@ -40,10 +40,11 @@ blocker. Each approval applies to the saved content you reviewed.
 
 ## Working as a team
 
-Use one PR per change. Name the decision owners, record intent/spec/plan decisions in
-comments identifying the artifact and commit, then use GitHub **Approve** for the final
-merge review. The implementing engineer can approve a routine plan; significant risk
-needs a teammate. See the [team workflow](docs/guide.md#team-workflow) for roles and an example.
+Use one PR per change. Name the decision owners and use explicit stage replies such as
+`Intent approved`, `Spec approved` and `Plan approved`; Claude binds each decision to
+the committed artifact revision it presented. Use GitHub **Approve** for the final merge
+review. The implementing engineer can approve a routine plan; significant risk needs a
+teammate. See the [team workflow](docs/guide.md#team-workflow) for roles and an example.
 
 ## Keep it small
 
