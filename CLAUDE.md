@@ -10,7 +10,7 @@ Python 3.10+, Git, standard library only.
 
 ## Keep the essentials
 
-- Keep start as the main path; the agent handles setup and stage transitions.
+- Keep `sdlc` as the single user-facing entry point; it selects the workflow action.
 - Prefer removing or simplifying before adding. Every file, command and abstraction
   must support a concrete user need.
 - Give each instruction one authoritative home. Link it instead of repeating it.
