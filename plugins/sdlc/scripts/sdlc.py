@@ -462,7 +462,7 @@ def install(root, name):
     for source, target in pairs:  # Refuse before copying anything: no half-installed monitor.
         if target.exists() and target.read_bytes() != source.read_bytes():
             raise ValueError(f'{target.name} exists with different content; merge it by hand')
-    copied += [str(target.relative_to(root)) for source, target in pairs if copy_new(source, target)]
+    copied += [target.relative_to(root).as_posix() for source, target in pairs if copy_new(source, target)]
     return {'installed': copied}
 
 
