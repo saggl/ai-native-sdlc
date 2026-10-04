@@ -16,4 +16,4 @@ it by creating a new uniquely named tracked change, copying the actual artifacts
 linking their original approval evidence. Review the current content before recording
 any decisions. Never convert old descriptive "approved" fields into human approval.
 
-Use `/sdlc:start` for the next task. Keep only one active implementation of the workflow.
+Use `/sdlc:run` for the next task. Keep only one active implementation of the workflow.
