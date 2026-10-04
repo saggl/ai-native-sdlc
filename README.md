@@ -2,13 +2,21 @@
 
 **Describe a change. Approve the decisions. Let your coding agent do the work.**
 
-One workflow for Claude Code, Codex and OpenCode. Decisions and evidence stay in Git,
-so a fresh session can continue where you left off. Requires Git and Python 3.10+.
+You already use a coding agent to plan, implement, test and review changes. This plugin
+connects those steps through decisions saved in your repository, so a fresh session or
+teammate can continue from the agreed goal and plan.
 
-When an agent can write code faster than a team can review it, the hard part is keeping
-the problem, expected behavior and chosen approach visible. This plugin guides one
-change through those decisions, implementation, independent review and observed
-delivery. It uses your existing repository, CI and release process.
+The software development lifecycle (SDLC) takes a change from idea to delivery and
+follow-up. In an AI-native workflow, agents carry work between those stages while humans
+approve the decisions that guide it.
+
+Describe what you want to change. The agent asks questions, creates and updates
+`intent.md`, `spec.md` and `plan.md`, then implements and checks the code against
+the approved decisions. You review and correct those files; the agent handles the
+templates and bookkeeping.
+
+Works with Claude Code, Codex and OpenCode in your existing repository, CI and release
+process. Requires Git and Python 3.10+.
 
 ## Start
 
@@ -20,7 +28,7 @@ Install the plugin for your agent, then use its single entry point for the whole
 | Codex | Invoke the installed `run` skill and describe the change |
 | OpenCode | `/sdlc Add CSV import with clear errors for invalid rows` |
 
-For Claude Code:
+Open your project directory and start Claude Code, then run:
 
 ```text
 /plugin marketplace add saggl/ai-native-sdlc
@@ -28,18 +36,23 @@ For Claude Code:
 /sdlc:run Add CSV import with clear errors for invalid rows
 ```
 
-Using Codex or OpenCode? See [setup and use](docs/guide.md#setup-and-use).
+Using another agent? See [Codex setup](docs/guide.md#codex) or [OpenCode setup](docs/guide.md#opencode).
 If Claude commands do not appear, use `/reload-plugins` or open a new session.
 
-## How to use it
+## Your first change
 
-Describe new work, resume with the change ID, or ask for a focused action such as
-“show status” or “review change <id>.” The agent reads the saved state and chooses the
-right next step. You do not switch between start, status and review commands.
+For the CSV import example above:
 
-The agent pauses when a human decision or external dependency is needed. Reply to the
-presented intent, spec or plan with `Intent approved`, `Spec approved` or
-`Plan approved`; otherwise give feedback. To resume, invoke the same command again.
+1. The agent asks who needs the import and what success looks like, then presents
+   `intent.md`. Give feedback or reply `Intent approved`.
+2. It drafts `spec.md` with the required behavior, such as how invalid rows are handled.
+   Revise it or reply `Spec approved`.
+3. It drafts `plan.md` with the implementation approach and checks.
+   Revise it or reply `Plan approved`. Implementation begins only after this approval.
+4. The agent implements, tests and obtains an independent agent review against those decisions.
+   It pauses for missing decisions or blocked checks.
+5. Merge and release follow your project's policy. The agent records delivery evidence,
+   the observed outcome and any follow-up.
 
 | You decide | The agent saves and does |
 | --- | --- |
@@ -48,9 +61,20 @@ presented intent, spec or plan with `Intent approved`, `Spec approved` or
 | Approach and checks | `plan.md`, then implementation, tests and fresh review |
 | Merge and release under project policy | Delivery evidence, observed outcome and follow-up |
 
+For solo work, reply to the agent's presented document in chat when your project policy
+allows it. The agent saves the decision and the reviewed revision. For GitHub teams,
+the responsible owner replies to the document's presentation in the change PR.
+
+## Continue with the same command
+
+Resume with `/sdlc:run <change-id>`, ask `/sdlc:run show status`, or request
+`/sdlc:run review change <change-id>`. In Codex, use the same installed `run` skill;
+in OpenCode, use `/sdlc`. The agent reads the saved state and chooses the next step,
+including after a teammate approves in the PR or you open a fresh session.
+
 ## Teams
 
-**One change, one PR.** Stage replies record decisions; GitHub **Approve** handles the
+**One change, one branch, one PR.** Stage replies record decisions; GitHub **Approve** handles the
 final merge review under your team's policy. See [roles and the sequence](docs/guide.md#team-workflow).
 
 Project context lives in `.sdlc/project.json`; decisions and evidence in `changes/<id>/`.
