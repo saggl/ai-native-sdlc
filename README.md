@@ -5,6 +5,11 @@
 One workflow for Claude Code, Codex and OpenCode. Decisions and evidence stay in Git,
 so a fresh session can continue where you left off. Requires Git and Python 3.10+.
 
+When an agent can write code faster than a team can review it, the hard part is keeping
+the problem, expected behavior and chosen approach visible. This plugin guides one
+change through those decisions, implementation, independent review and observed
+delivery. It uses your existing repository, CI and release process.
+
 ## Start
 
 In Claude Code:
@@ -43,5 +48,11 @@ Project context lives in `.sdlc/project.json`; decisions and evidence in `change
 Local records detect stale content, but do not authenticate approvals. Existing CI and
 release controls still apply; unavailable required checks stay pending.
 
+This is a guided workflow, not an autonomous runner. It does not install CI gates,
+authenticate reviewers or deploy your project. Start with a small change and adapt the
+decision owners to your team's existing policy.
+
 [Setup and maintenance](docs/guide.md) ·
+[Contributing](CONTRIBUTING.md) ·
+[Issues and feedback](https://github.com/saggl/ai-native-sdlc/issues) ·
 [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook)
