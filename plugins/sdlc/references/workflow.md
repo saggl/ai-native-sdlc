@@ -20,7 +20,7 @@ text as arguments, never interpolate it as executable shell code.
 | `new <id> --title <title>` | Create a unique change folder, state and intent template |
 | `new <id> --title <title> --adopt` | Register an existing committed `changes/<id>/intent.md` (connector, monitor, scan, Tag) without overwriting it |
 | `lock-tests <id> --paths <path>...` | Hash committed failing/regression tests; later `record-result` refuses if they change |
-| `install <hooks\|evals\|review\|handoff\|monitor>` | Opt-in, only on the user's explicit yes: `hooks` copies the guard to `.claude/hooks/sdlc-guard.py` and merges PreToolUse/PostToolUse entries into `.claude/settings.json`; others copy `ci/<name>.yml` to `.github/workflows/sdlc-<name>.yml` (`monitor` also `.sdlc/bands.py` and `bands.json`). Never overwrites |
+| `install <hooks\|monitor>` | Opt-in, only on the user's explicit yes: `hooks` copies the guard to `.claude/hooks/sdlc-guard.py` and merges PreToolUse/PostToolUse entries into `.claude/settings.json`; `monitor` (experimental) copies `ci/monitor.yml` to `.github/workflows/sdlc-monitor.yml` plus `.sdlc/bands.py` and `bands.json`. Never overwrites |
 | `status [id]` | Infer next stage; check saved artifact and evidence fingerprints; may report `workflow_changed: true` |
 | `draft <id> spec` / `draft <id> plan` | Create the next template after prior decisions |
 | `record-approval <id> <intent\|spec\|plan> --by <human> --evidence <reference> --decision <exact-decision>` | Record a real human decision on committed artifacts |
@@ -93,7 +93,7 @@ identity nor parses comments: the agent inspects sources through available tools
   rewriting approved history.
 
 Use [stage actions](stages.md) for execution. Existing branch rules, CI, protected
-environments and permissions remain authoritative. Hooks and CI templates are opt-in, installed only
+environments and permissions remain authoritative. Hooks and the monitor are opt-in, installed only
 through `install` after the user's explicit yes; nothing is active by default. The helper
 never calls models or product commands. No credentials, auto-merge or deployment access
 are installed.

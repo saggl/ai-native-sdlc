@@ -32,9 +32,7 @@ touching `plugins/sdlc/**` or `evals/**` and weekly, then uploads `eval-results.
 skips with a notice when the `ANTHROPIC_API_KEY` secret is absent. Set the repository
 variable `EVAL_MODEL` to record the configured model. No run results exist until it runs.
 
-User projects can install `plugins/sdlc/ci/evals.yml`. It runs each `evals/*.json` case,
-`{"prompt": "<task>", "check": "<shell command>"}`, through `claude -p`, then the `check`
-command (exit 0 = pass), and fails below `EVAL_PASS_RATE` (default 0.9).
+For user projects, see [CI with Claude](../docs/guide.md#ci-with-claude).
 
 ## Broader evaluation scenarios
 

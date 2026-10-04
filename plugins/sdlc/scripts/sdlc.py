@@ -439,7 +439,7 @@ def copy_new(source, target):
 
 
 def install(root, name):
-    """Opt-in enforcement and CI, run only after the user's explicit yes."""
+    """Opt-in enforcement and monitoring, run only after the user's explicit yes."""
     config(root)
     copied = []
     if name == 'hooks':
@@ -456,12 +456,13 @@ def install(root, name):
                 copied.append(f'.claude/settings.json:{event}')
         write_json(path, settings)
         return {'installed': copied}
-    files = {f'ci/{name}.yml': f'.github/workflows/sdlc-{name}.yml'}
-    if name == 'monitor':
-        files.update({'scripts/bands.py': '.sdlc/bands.py', 'ci/bands.json': '.sdlc/bands.json'})
-    for source, target in files.items():
-        if copy_new(PLUGIN / source, safe_path(root, target)):
-            copied.append(target)
+    files = {'ci/monitor.yml': '.github/workflows/sdlc-monitor.yml',
+             'scripts/bands.py': '.sdlc/bands.py', 'ci/bands.json': '.sdlc/bands.json'}
+    pairs = [(PLUGIN / source, safe_path(root, target)) for source, target in files.items()]
+    for source, target in pairs:  # Refuse before copying anything: no half-installed monitor.
+        if target.exists() and target.read_bytes() != source.read_bytes():
+            raise ValueError(f'{target.name} exists with different content; merge it by hand')
+    copied += [str(target.relative_to(root)) for source, target in pairs if copy_new(source, target)]
     return {'installed': copied}
 
 
@@ -499,7 +500,7 @@ def main():
     command.add_argument('id')
     command.add_argument('--paths', nargs='+', required=True)
     command = commands.add_parser('install')
-    command.add_argument('name', choices=('hooks', 'evals', 'review', 'handoff', 'monitor'))
+    command.add_argument('name', choices=('hooks', 'monitor'))
     args = parser.parse_args()
     try:
         root = repository(args.root)
