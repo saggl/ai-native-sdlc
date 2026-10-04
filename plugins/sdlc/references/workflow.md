@@ -32,17 +32,22 @@ an approval is recorded. Git history, not a shared example project, holds the de
 ## Team decisions on one PR
 
 For GitHub teams, use one draft PR from intent onward when authorized to publish.
-Use the owners and policy established during setup. At a stage gate, show the artifact
-and full commit SHA and identify the decision owner. Provide a handoff for that owner;
-request a review or send a notification only when authorized to do so.
+Use the owners and policy established during setup. At a stage gate, present the committed
+artifact revision, identify the decision owner and ask for the concise stage response
+`Intent approved`, `Spec approved` or `Plan approved`. Provide a handoff for that
+owner; request a review or send a notification only when authorized to do so.
 
-A stage comment must explicitly approve the named artifact at the referenced commit.
-Retrieve the actual comment/review and verify its author against the agreed owner,
-its decision and its revision. Compare the approved artifact and upstream policy with
-current content before recording. Save the source URL and exact decision using
-`record-approval`; do not invent evidence or use a label as authorization. If the source
-is inaccessible, role unclear, decision withdrawn or content stale, resolve that gate.
-For chat decisions allowed by project policy, retain the exact human quote and context.
+A human response counts when it explicitly communicates approval or acceptance and
+identifies the artifact being approved (intent, spec or plan). Exact wording is not
+required; accept obvious spelling mistakes when the meaning remains unambiguous. Do not
+infer approval from generic positive feedback, reactions, labels, or a response that also
+requests an unresolved change. Retrieve the actual comment/review and verify its author
+against the agreed owner. Bind the decision to the exact committed artifact revision that
+was presented, then compare that artifact and upstream policy with current content before
+recording. Save the source URL and exact decision using `record-approval`; do not invent
+evidence. If the source is inaccessible, role unclear, decision withdrawn or content
+stale, resolve that gate. For chat decisions allowed by project policy, retain the exact
+human quote and context.
 
 On resume, recheck referenced decisions; continue without asking for unchanged, still
 valid approvals again. New implementation commits alone do not revoke artifact decisions.
