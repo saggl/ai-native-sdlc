@@ -79,6 +79,16 @@ class GuardTests(unittest.TestCase):
         self.config(protected_paths=['*'])
         self.assertEqual(self.write('../outside.txt').returncode, 0)
 
+    def test_gates_ignore_quoted_prose_and_heredocs(self):
+        self.config(gates=[{'match': r'gh pr merge', 'require_env': 'MERGE_OK', 'reason': 'Merge needs approval.'}])
+        self.assertEqual(self.bash('git commit -m "Gate gh pr merge behind approval"').returncode, 0)
+        self.assertEqual(self.bash("gh pr create --body 'never gh pr merge directly'").returncode, 0)
+        heredoc = 'git commit -m "$(cat <<\'EOF\'\nDocs: gh pr merge needs approval\nEOF\n)"'
+        self.assertEqual(self.bash(heredoc).returncode, 0)
+        self.assertEqual(self.bash('gh pr merge 3 --squash').returncode, 2)
+        self.assertEqual(self.bash('cd x && gh pr merge 3').returncode, 2)
+        self.assertEqual(self.bash('bash -c "gh pr merge 3"').returncode, 2)
+
     def test_gates(self):
         self.config(gates=[
             {'match': r'git push', 'require_env': 'DEPLOY_OK', 'action': 'block', 'reason': 'No pushes.'},

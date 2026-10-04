@@ -150,6 +150,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(data['model'], 'keep')
         self.assertEqual(set(data['hooks']), {'Stop', 'PreToolUse', 'PostToolUse'})
         self.assertTrue((self.root / '.claude/hooks/sdlc-guard.py').is_file())
+        command = data['hooks']['PreToolUse'][0]['hooks'][0]['command']
+        if os.name != 'nt':  # The hook command is a POSIX shell line run by Claude Code.
+            env = {**os.environ, 'CLAUDE_PROJECT_DIR': str(self.root)}
+            event = json.dumps({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash',
+                                'tool_input': {'command': 'ls'}})
+            (self.root / '.claude/hooks/sdlc-guard.py').unlink()  # e.g. a branch without it
+            run = subprocess.run(['sh', '-c', command], input=event, env=env, capture_output=True, text=True)
+            self.assertEqual((run.returncode, run.stderr), (0, ''))
 
     def test_install_monitor_never_overwrites(self):
         bands = self.root / '.sdlc/bands.json'
