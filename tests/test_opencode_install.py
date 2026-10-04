@@ -1,3 +1,5 @@
+import hashlib
+import json
 import subprocess
 import shutil
 from unittest.mock import patch
@@ -5,7 +7,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-
 from importlib.util import module_from_spec, spec_from_file_location
 
 
@@ -48,6 +49,27 @@ class OpenCodeInstallTests(unittest.TestCase):
                 installer.install(config)
             self.assertEqual((skill / 'SKILL.md').read_text(), 'my skill')
 
+    def test_update_removes_only_unchanged_legacy_commands(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / 'opencode'
+            skill = config / 'skills/sdlc'
+            commands = config / 'commands'
+            skill.mkdir(parents=True)
+            commands.mkdir()
+            legacy = commands / installer.LEGACY_NAMES[0]
+            legacy.write_text('managed old command')
+            custom = commands / installer.LEGACY_NAMES[1]
+            custom.write_text('user-edited command')
+            (skill / installer.MARKER).write_text(json.dumps({
+                'commands': {
+                    installer.LEGACY_NAMES[0]: hashlib.sha256(legacy.read_bytes()).hexdigest(),
+                    installer.LEGACY_NAMES[1]: 'different-hash',
+                }
+            }))
+            installer.install(config)
+            self.assertFalse(legacy.exists())
+            self.assertEqual(custom.read_text(), 'user-edited command')
+            self.assertTrue((commands / 'sdlc.md').is_file())
 
     def test_upstream_update_replaces_only_unmodified_installed_commands(self):
         with tempfile.TemporaryDirectory() as directory:
