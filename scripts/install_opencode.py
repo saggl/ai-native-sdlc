@@ -1,4 +1,4 @@
-"""Install the bundled skill and commands into OpenCode's global config."""
+"""Install the bundled skill and single command into OpenCode's global config."""
 
 import argparse
 import hashlib
@@ -11,7 +11,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins' / 'sdlc'
 COMMANDS = ROOT / 'opencode' / 'commands'
-NAMES = ('sdlc-start.md', 'sdlc-status.md', 'sdlc-review.md')
+NAMES = ('sdlc.md',)
 MARKER = '.ai-native-sdlc-install'
 
 
@@ -64,4 +64,3 @@ if __name__ == '__main__':
         print(f'Installed OpenCode SDLC at {install(args.config_dir.expanduser())}')
     except ValueError as error:
         parser.exit(1, f'{error}\n')
-
