@@ -9,12 +9,16 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 PLUGIN = Path(__file__).resolve().parents[1]
 VERSION = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text())['version']
 STAGES = ('intent', 'spec', 'plan')
 RESULTS = ('verification', 'review', 'delivery', 'learning')
+GUIDANCE = ('SKILL.md', 'skills', 'agents', 'references', 'templates', 'scripts/sdlc.py')
+DEVIATIONS = '\n## Implementation deviations'
+HOOK = 'python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/sdlc-guard.py"'
 
 
 def now():
@@ -125,9 +129,16 @@ def copy_template(root, folder, name, title):
         out.write(text.replace('[[SDLC_TITLE]]', title))
 
 
-def new(root, slug, title):
+def new(root, slug, title, adopt=False):
     folder = change_dir(root, slug)
-    folder.mkdir(parents=True, exist_ok=False)
+    if adopt:
+        # Intake from a connector, monitor, scan or channel: keep its committed intent.
+        if not (folder / 'intent.md').is_file():
+            raise ValueError(f'No intent.md to adopt in {folder.relative_to(root)}')
+        if (folder / 'state.json').exists():
+            raise ValueError('This change is already tracked')
+    else:
+        folder.mkdir(parents=True, exist_ok=False)
     try:
         head = git(root, 'rev-parse', 'HEAD').decode().strip()
     except ValueError:
@@ -135,7 +146,8 @@ def new(root, slug, title):
     data = {'schema': 1, 'id': slug, 'title': title, 'created_at': now(),
             'plugin_version': VERSION, 'base_commit': head, 'approvals': [], 'results': []}
     save(root, folder, data)
-    copy_template(root, folder, 'intent', title)
+    if not adopt:
+        copy_template(root, folder, 'intent', title)
     return data
 
 
@@ -150,27 +162,37 @@ def file_digest(root, relative, required=True):
     return sha(path.read_bytes())
 
 
+def decided_text(root, folder, stage):
+    """Artifact text under decision; recorded plan deviations follow the decision."""
+    text = safe_path(root, folder.relative_to(root) / (stage + '.md')).read_text(encoding='utf-8')
+    return text.split(DEVIATIONS, 1)[0] if stage == 'plan' else text
+
+
 def artifact_snapshot(root, folder, stage):
-    paths = [folder.relative_to(root) / (s + '.md') for s in STAGES[:STAGES.index(stage) + 1]]
-    paths += [Path('.sdlc/project.json')]
-    paths += [Path(p) for p in config(root).get('policy_files', [])]
-    values = {str(p): file_digest(root, p) for p in paths}
+    names = STAGES[:STAGES.index(stage) + 1]
+    paths = [Path('.sdlc/project.json')] + [Path(p) for p in config(root).get('policy_files', [])]
+    values = {str(folder.relative_to(root) / (s + '.md')): sha(decided_text(root, folder, s).encode())
+              for s in names}
+    values.update({str(p): file_digest(root, p) for p in paths})
     for name in ('CLAUDE.md', 'REVIEW.md', 'AGENTS.md'):
         values[name] = file_digest(root, name, required=False)
     return values
 
 
 def workflow_provenance():
-    """Identify the installed guidance, including unversioned local edits."""
+    """Identify the guidance that steers the agent, including unversioned local edits."""
+    paths = [PLUGIN / name for name in GUIDANCE]
+    paths = [p for root in paths for p in ([root] if root.is_file() else root.rglob('*'))]
     files = {path.relative_to(PLUGIN).as_posix(): sha(path.read_bytes())
-             for path in sorted(PLUGIN.rglob('*'))
-             if path.is_file() and path.suffix in ('.md', '.py', '.json')}
+             for path in sorted(paths) if path.is_file() and path.suffix in ('.md', '.py', '.json')}
     return {'version': VERSION, 'sha256': sha(json.dumps(files, sort_keys=True).encode())}
 
 
-def workflow_matches(record):
-    # Legacy records predate provenance; retain compatibility without claiming coverage.
-    return 'workflow' not in record or record['workflow'] == workflow_provenance()
+def workflow_changed(data):
+    # Legacy records predate provenance; the version alone is not compared.
+    records = [r for r in data['approvals'] + data['results'] if 'workflow' in r]
+    current = workflow_provenance()['sha256']
+    return any(r['workflow'].get('sha256') != current for r in records)
 
 
 def approval_valid(root, folder, data, stage):
@@ -179,8 +201,7 @@ def approval_valid(root, folder, data, stage):
     except FileNotFoundError:
         return False
     records = [r for r in data['approvals'] if r['stage'] == stage]
-    return bool(records and records[-1]['snapshot'] == snapshot
-                and workflow_matches(records[-1]))
+    return bool(records and records[-1]['snapshot'] == snapshot)
 
 
 def require_approvals(root, folder, data, stages):
@@ -207,7 +228,7 @@ def record_approval(root, slug, stage, by, evidence, decision):
     require_approvals(root, folder, data, STAGES[:STAGES.index(stage)])
     snapshot = artifact_snapshot(root, folder, stage)
     for name in STAGES[:STAGES.index(stage) + 1]:
-        text = safe_path(root, folder.relative_to(root) / (name + '.md')).read_text(encoding='utf-8')
+        text = decided_text(root, folder, name)
         if '[[SDLC_TITLE]]' in text or '<!-- SDLC:' in text:
             raise ValueError(f'Replace template prompts before recording approval: {name}.md')
     files = [p for p, digest in snapshot.items() if digest is not None]
@@ -292,7 +313,6 @@ def result_valid(root, folder, data, kind, code):
     last = records[-1]
     try:
         return (last['outcome'] == 'passed' and last['code'] == code
-                and workflow_matches(last)
                 and last['artifacts'] == artifact_snapshot(root, folder, 'plan')
                 and last['report_sha'] == file_digest(root, last['report'])
                 and last['prerequisites'] == prerequisite_snapshot(data, kind))
@@ -305,6 +325,26 @@ def prerequisite_snapshot(data, kind):
                                     sort_keys=True).encode())
             for previous in RESULTS[:RESULTS.index(kind)]
             if any(r['kind'] == previous for r in data['results'])}
+
+
+def lock_tests(root, slug, paths):
+    """Record committed regression tests so a fix cannot weaken them unnoticed."""
+    folder, data = state(root, slug)
+    if data.get('closed_at'):
+        raise ValueError('This change is complete; create a new change for follow-up work')
+    for path in paths:
+        git(root, 'ls-files', '--error-unmatch', '--', path)
+    if git(root, 'diff', 'HEAD', '--', *paths):
+        raise ValueError('Commit the failing tests before locking them')
+    data.setdefault('locked_tests', {}).update({Path(p).as_posix(): file_digest(root, p) for p in paths})
+    save(root, folder, data)
+    return {'locked_tests': data['locked_tests']}
+
+
+def require_locked_tests(root, data):
+    for path, digest in data.get('locked_tests', {}).items():
+        if file_digest(root, path, required=False) != digest:
+            raise ValueError(f'Locked test changed: {path}; fix the code, or ask the owner to re-lock')
 
 
 def record_result(root, slug, kind, outcome, report):
@@ -321,6 +361,7 @@ def record_result(root, slug, kind, outcome, report):
     if not text.strip() or '[[SDLC_TITLE]]' in text or '<!-- SDLC:' in text:
         raise ValueError('Replace report template prompts with actual evidence')
     require_committed_code(root)
+    require_locked_tests(root, data)
     code = code_snapshot(root)
     for previous in RESULTS[:RESULTS.index(kind)]:
         if not result_valid(root, folder, data, previous, code):
@@ -338,10 +379,12 @@ def record_result(root, slug, kind, outcome, report):
     return record
 
 
-def status(root, slug):
+def status(root, slug, snapshot=None):
     folder, data = state(root, slug)
     result = {'id': slug, 'title': data['title'], 'path': str(folder.relative_to(root)),
               'next': None, 'approval_note': 'Local records only: verify referenced human evidence.'}
+    if workflow_changed(data):
+        result['workflow_changed'] = True  # Recheck open decisions against current guidance.
     if data.get('closed_at'):
         result['next'] = 'complete'
         result['closed_at'] = data['closed_at']
@@ -353,7 +396,7 @@ def status(root, slug):
         if not approval_valid(root, folder, data, stage):
             result['next'] = 'approve-' + stage
             return result
-    code = code_snapshot(root)
+    code = (snapshot or code_snapshot)(root)
     for kind, action in zip(RESULTS, ('implement-and-verify', 'review', 'deliver', 'observe-and-learn')):
         if not result_valid(root, folder, data, kind, code):
             result['next'] = action
@@ -367,13 +410,59 @@ def all_status(root):
         return {'next': 'setup', 'changes': []}
     folder = safe_path(root, config(root)['changes_dir'])
     output = []
+    cache = {}
+
+    def snapshot(root):
+        # One repository hash serves every change; computed only when a change needs it.
+        if 'code' not in cache:
+            cache['code'] = code_snapshot(root)
+        return cache['code']
+
     if folder.exists():
         for child in sorted(folder.iterdir()):
             if child.is_symlink():
                 raise ValueError(f'Symlink in changes directory: {child.name}')
             if child.is_dir() and (child / 'state.json').exists():
-                output.append(status(root, child.name))
+                output.append(status(root, child.name, snapshot))
     return {'changes': output}
+
+
+def copy_new(source, target):
+    """Copy once; an identical file is a no-op and a different one is never overwritten."""
+    if target.exists():
+        if target.read_bytes() != source.read_bytes():
+            raise ValueError(f'{target.name} exists with different content; merge it by hand')
+        return False
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    return True
+
+
+def install(root, name):
+    """Opt-in enforcement and CI, run only after the user's explicit yes."""
+    config(root)
+    copied = []
+    if name == 'hooks':
+        if copy_new(PLUGIN / 'hooks/guard.py', safe_path(root, '.claude/hooks/sdlc-guard.py')):
+            copied.append('.claude/hooks/sdlc-guard.py')
+        path = safe_path(root, '.claude/settings.json')
+        settings = read_json(path) if path.exists() else {}
+        hooks = settings.setdefault('hooks', {})
+        for event, matcher in (('PreToolUse', 'Edit|Write|MultiEdit|NotebookEdit|Bash'),
+                               ('PostToolUse', 'Edit|Write|MultiEdit')):
+            entries = hooks.setdefault(event, [])
+            if not any(h.get('command') == HOOK for e in entries for h in e.get('hooks', [])):
+                entries.append({'matcher': matcher, 'hooks': [{'type': 'command', 'command': HOOK}]})
+                copied.append(f'.claude/settings.json:{event}')
+        write_json(path, settings)
+        return {'installed': copied}
+    files = {f'ci/{name}.yml': f'.github/workflows/sdlc-{name}.yml'}
+    if name == 'monitor':
+        files.update({'scripts/bands.py': '.sdlc/bands.py', 'ci/bands.json': '.sdlc/bands.json'})
+    for source, target in files.items():
+        if copy_new(PLUGIN / source, safe_path(root, target)):
+            copied.append(target)
+    return {'installed': copied}
 
 
 def nonempty(value):
@@ -390,6 +479,7 @@ def main():
     command = commands.add_parser('new')
     command.add_argument('id')
     command.add_argument('--title', required=True, type=nonempty)
+    command.add_argument('--adopt', action='store_true', help='Track an existing committed intent.md')
     command = commands.add_parser('status')
     command.add_argument('id', nargs='?')
     command = commands.add_parser('draft')
@@ -405,19 +495,28 @@ def main():
     command.add_argument('kind', choices=RESULTS)
     command.add_argument('--outcome', choices=('passed', 'blocked'), required=True)
     command.add_argument('--report', required=True)
+    command = commands.add_parser('lock-tests')
+    command.add_argument('id')
+    command.add_argument('--paths', nargs='+', required=True)
+    command = commands.add_parser('install')
+    command.add_argument('name', choices=('hooks', 'evals', 'review', 'handoff', 'monitor'))
     args = parser.parse_args()
     try:
         root = repository(args.root)
         if args.command == 'setup':
             result = setup(root)
         elif args.command == 'new':
-            result = new(root, args.id, args.title)
+            result = new(root, args.id, args.title, args.adopt)
         elif args.command == 'status':
             result = status(root, args.id) if args.id else all_status(root)
         elif args.command == 'draft':
             result = draft(root, args.id, args.stage)
         elif args.command == 'record-approval':
             result = record_approval(root, args.id, args.stage, args.by, args.evidence, args.decision)
+        elif args.command == 'lock-tests':
+            result = lock_tests(root, args.id, args.paths)
+        elif args.command == 'install':
+            result = install(root, args.name)
         else:
             result = record_result(root, args.id, args.kind, args.outcome, args.report)
         print(json.dumps(result, indent=2, ensure_ascii=False))

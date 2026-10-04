@@ -15,6 +15,13 @@ sdlc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sdlc)
 
 
+def load_copy(plugin):
+    copy_spec = importlib.util.spec_from_file_location('sdlc_copy', plugin / 'scripts/sdlc.py')
+    module = importlib.util.module_from_spec(copy_spec)
+    copy_spec.loader.exec_module(module)
+    return module
+
+
 class WorkflowTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -61,16 +68,97 @@ class WorkflowTests(unittest.TestCase):
     def next(self):
         return sdlc.status(self.root, 'csv-import')['next']
 
-    def test_workflow_provenance_detects_guidance_changes(self):
+    def test_workflow_change_is_reported_without_regressing_next_action(self):
         self.prepare()
         record = sdlc.state(self.root, 'csv-import')[1]['approvals'][-1]
         self.assertEqual(record['workflow'], sdlc.workflow_provenance())
         self.result('verification')
-        self.assertEqual(self.next(), 'review')
-        with patch.object(sdlc, 'workflow_provenance', return_value={'version': 'changed', 'sha256': 'changed'}):
-            self.assertEqual(self.next(), 'approve-intent')
-            folder, data = sdlc.state(self.root, 'csv-import')
-            self.assertFalse(sdlc.result_valid(self.root, folder, data, 'verification', sdlc.code_snapshot(self.root)))
+        self.assertNotIn('workflow_changed', sdlc.status(self.root, 'csv-import'))
+        with patch.object(sdlc, 'workflow_provenance', return_value={'version': 'x', 'sha256': 'changed'}):
+            current = sdlc.status(self.root, 'csv-import')
+            self.assertEqual((current['next'], current['workflow_changed']), ('review', True))
+
+    def test_provenance_covers_guidance_not_manifests(self):
+        self.assertIn('references', sdlc.GUIDANCE)
+        with tempfile.TemporaryDirectory() as temp:
+            copy = Path(temp) / 'sdlc'
+            import shutil
+            shutil.copytree(PLUGIN, copy)
+            module = load_copy(copy)
+            before = module.workflow_provenance()['sha256']
+            (copy / 'ci/review.yml').write_text('changed\n')
+            (copy / 'hooks/guard.py').write_text('changed\n')
+            self.assertEqual(module.workflow_provenance()['sha256'], before)
+            (copy / 'references/stages.md').write_text('changed\n')
+            self.assertNotEqual(module.workflow_provenance()['sha256'], before)
+
+    def test_status_hashes_code_once_for_all_changes(self):
+        sdlc.new(self.root, 'second', 'Second')
+        for slug in ('csv-import', 'second'):
+            self.folder = self.root / 'changes' / slug
+            for stage in sdlc.STAGES:
+                (self.folder / (stage + '.md')).write_text(f'# {stage}\nReviewed.\n')
+                self.commit()
+                sdlc.record_approval(self.root, slug, stage, 'Owner', 'fixture', 'Approved.')
+        with patch.object(sdlc, 'code_snapshot', wraps=sdlc.code_snapshot) as snapshot:
+            changes = sdlc.all_status(self.root)['changes']
+        self.assertEqual([c['next'] for c in changes], ['implement-and-verify'] * 2)
+        self.assertEqual(snapshot.call_count, 1)
+
+    def test_plan_deviations_do_not_invalidate_plan_approval(self):
+        self.prepare()
+        plan = self.folder / 'plan.md'
+        plan.write_text(plan.read_text() + '\n## Implementation deviations\nRenamed helper; same behavior.\n')
+        self.assertEqual(self.next(), 'implement-and-verify')
+        plan.write_text('# plan\nA different approach.\n')
+        self.assertEqual(self.next(), 'approve-plan')
+
+    def test_locked_tests_cannot_change_before_results(self):
+        (self.root / 'test_app.py').write_text('assert value == 2\n')
+        self.prepare()
+        with self.assertRaisesRegex(ValueError, 'ls-files|did not match'):
+            sdlc.lock_tests(self.root, 'csv-import', ['missing_test.py'])
+        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        self.commit()
+        (self.root / 'test_app.py').write_text('assert True\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
+            self.result('verification')
+        (self.root / 'test_app.py').write_text('assert value == 2\n')
+        self.commit()
+        self.assertEqual(self.result('verification')['outcome'], 'passed')
+
+    def test_adopt_existing_intent_without_overwriting(self):
+        folder = self.root / 'changes/from-monitor'
+        with self.assertRaisesRegex(ValueError, 'No intent.md'):
+            sdlc.new(self.root, 'from-monitor', 'Drift', adopt=True)
+        folder.mkdir()
+        (folder / 'intent.md').write_text('# Intent: drift\nEvidence.\n')
+        sdlc.new(self.root, 'from-monitor', 'Drift', adopt=True)
+        self.assertEqual((folder / 'intent.md').read_text(), '# Intent: drift\nEvidence.\n')
+        self.assertEqual(sdlc.status(self.root, 'from-monitor')['next'], 'approve-intent')
+        with self.assertRaisesRegex(ValueError, 'already tracked'):
+            sdlc.new(self.root, 'from-monitor', 'Drift', adopt=True)
+
+    def test_install_hooks_merges_settings_and_is_idempotent(self):
+        settings = self.root / '.claude/settings.json'
+        settings.parent.mkdir()
+        settings.write_text(json.dumps({'model': 'keep', 'hooks': {'Stop': [{'hooks': []}]}}))
+        self.assertEqual(len(sdlc.install(self.root, 'hooks')['installed']), 3)
+        self.assertEqual(sdlc.install(self.root, 'hooks')['installed'], [])
+        data = json.loads(settings.read_text())
+        self.assertEqual(data['model'], 'keep')
+        self.assertEqual(set(data['hooks']), {'Stop', 'PreToolUse', 'PostToolUse'})
+        self.assertTrue((self.root / '.claude/hooks/sdlc-guard.py').is_file())
+
+    def test_install_ci_never_overwrites(self):
+        self.assertEqual(sorted(sdlc.install(self.root, 'monitor')['installed']),
+                         ['.github/workflows/sdlc-monitor.yml', '.sdlc/bands.json', '.sdlc/bands.py'])
+        self.assertEqual(sdlc.install(self.root, 'monitor')['installed'], [])
+        (self.root / '.github/workflows/sdlc-review.yml').write_text('custom\n')
+        with self.assertRaisesRegex(ValueError, 'different content'):
+            sdlc.install(self.root, 'review')
+        self.assertEqual((self.root / '.github/workflows/sdlc-review.yml').read_text(), 'custom\n')
 
     def test_legacy_approvals_without_provenance_remain_readable(self):
         self.approve('intent')
