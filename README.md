@@ -38,6 +38,13 @@ blocker. Each approval applies to the saved content you reviewed.
 **Resume with `/sdlc:start`.** Use `/sdlc:status` for progress or
 `/sdlc:review <change-id>` for review in a fresh session.
 
+## Working as a team
+
+Use one PR per change. Name the decision owners, record intent/spec/plan decisions in
+comments identifying the artifact and commit, then use GitHub **Approve** for the final
+merge review. The implementing engineer can approve a routine plan; significant risk
+needs a teammate. See the [team workflow](docs/guide.md#team-workflow) for roles and an example.
+
 ## Keep it small
 
 Use short artifacts. Create them only when needed. Link existing evidence instead of

@@ -28,6 +28,57 @@ project's decisions or configuration. Teams can roll out a tested marketplace/re
 For the old copied 0.1 package, follow the [migration instructions](../plugins/sdlc/references/migrate.md).
 Existing 0.2 records need no migration.
 
+## Team workflow
+
+Use one branch and PR per change, from the first intent through implementation.
+Agree on the owners during setup; one person can hold several roles. These are starting
+defaults for teams. Preserve existing project policy and record agreed adaptations in
+REVIEW.md; never silently change repository settings.
+
+| Decision | Default owner | Record |
+| --- | --- | --- |
+| Intent: problem, scope and value | Product or delegated task owner | Stage comment naming artifact and commit |
+| Spec: behavior and constraints | Product/domain owner | Stage comment naming artifact and commit |
+| Plan: approach and verification | Implementing engineer; teammate for significant risk | Explicit decision on the saved plan |
+| Implementation and fixes within scope | Claude, with tests and fresh agent review | Verification and review evidence; no per-edit human approval |
+| Merge | One teammate, with required checks passing | GitHub approving review |
+| Release | Existing release authority | Existing release decision |
+
+The engineer driving Claude can approve a routine plan. Claude cannot approve its own
+work or impersonate that engineer. Escalate significant risk such as changed safety
+behavior, authentication, public interfaces, data migrations or architecture.
+
+For example, a CSV import follows this sequence:
+
+1. Claude saves and commits `changes/csv-import/intent.md`. With permission to push/open
+   a PR, it opens a draft PR; otherwise it provides the local artifact and next action.
+2. Share the PR link with the product owner. They comment, for example:
+   `I approve changes/csv-import/intent.md at commit <full SHA>.`
+3. Resume `/sdlc:start`. Claude retrieves that comment, checks its author against the
+   agreed owner and checks the referenced revision, then records the decision and drafts
+   the spec. Repeat for spec and plan, using their respective owners. An authorized
+   engineer's exact chat approval of the saved plan is also usable when team policy allows;
+   retain its quote/context and do not represent it as a GitHub review.
+4. Claude implements, tests and obtains fresh agent review on the same branch. Material
+   scope or behavior changes return to the relevant human decision.
+5. Mark the PR ready and request a teammate's review. They review behavior, evidence,
+   findings and relevant code, then choose GitHub **Approve**. Merge only when project
+   requirements are met; release through the existing process.
+
+Labels may show progress but do not count as decisions. A stage comment approves only
+its named artifact revision; it does not satisfy GitHub's required approving review.
+New code alone does not invalidate unchanged artifact approvals. Changed upstream
+artifacts or policy make affected records stale and require the relevant decisions again.
+GitHub can separately dismiss final PR approvals when the diff changes, depending on
+branch settings. See [GitHub reviews](https://docs.github.com/en/pull-requests/reference/pull-request-reviews)
+and [branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+
+The current helper records evidence and detects changed content. Claude inspects approval
+sources through available tools; there is no built-in GitHub identity/role enforcement,
+comment parser or background watcher. If evidence is inaccessible or the approver's role
+is unclear, stop at that decision. Resume manually with `/sdlc:start` after a response.
+Intent, spec and plan remain separate sequential decisions in this version.
+
 ## Extend when needed
 
 Keep project commands and recurring mistakes in CLAUDE.md. Put reusable domain policy

@@ -11,6 +11,13 @@ Fill the project config from evidence, preserving existing values on later runs:
 - `policy_files`: repository-relative paths for applicable security, architecture,
   product or review policies. These files join approval snapshots. Keep this concise.
 - `owners`: actual intent/spec, engineering and release decision owners, if known.
+  For team use, identify GitHub handles or another retrievable identity. Discover these
+  from project policy; ask only for a missing owner needed at the current decision.
+  Default to the product/domain owner for intent/spec, the implementing engineer for a
+  routine plan, and a teammate for significant risk. Default merge review is one teammate
+  plus passing required checks; release follows existing policy. Preserve project rules.
+  Record agreed team policy in REVIEW.md, including any adaptations; do not infer owner
+  authority merely from comment access or install/change branch rules during setup.
 - `delivery`: existing release command or process, authorization and rollback route.
 - `observe`: the signal of success, where to read it, observation window and owner.
 - `changes_dir`: default `changes`; use another unused evidence-only directory if that

@@ -29,6 +29,27 @@ artifacts and records at handoffs, using explicitly scoped staging; preserve unr
 work. A new repo can start with no commits; reviewed artifacts must be committed before
 an approval is recorded. Git history, not a shared example project, holds the decisions.
 
+## Team decisions on one PR
+
+For GitHub teams, use one draft PR from intent onward when authorized to publish.
+Use the owners and policy established during setup. At a stage gate, show the artifact
+and full commit SHA and identify the decision owner. Provide a handoff for that owner;
+request a review or send a notification only when authorized to do so.
+
+A stage comment must explicitly approve the named artifact at the referenced commit.
+Retrieve the actual comment/review and verify its author against the agreed owner,
+its decision and its revision. Compare the approved artifact and upstream policy with
+current content before recording. Save the source URL and exact decision using
+`record-approval`; do not invent evidence or use a label as authorization. If the source
+is inaccessible, role unclear, decision withdrawn or content stale, resolve that gate.
+For chat decisions allowed by project policy, retain the exact human quote and context.
+
+On resume, recheck referenced decisions; continue without asking for unchanged, still
+valid approvals again. New implementation commits alone do not revoke artifact decisions.
+GitHub's final approving review is a separate merge gate; stage comments and fresh agent
+review do not satisfy it. No built-in identity/role enforcement, comment parser or watcher
+is installed: use available tools to inspect evidence and `/sdlc:start` to resume manually.
+
 ## Rules shared by every stage
 
 - Humans own intent, behavior, approach and release judgment. One person can hold
@@ -39,7 +60,9 @@ an approval is recorded. Git history, not a shared example project, holds the de
   SHA-256 of artifacts/policies. They detect stale content; they do not authenticate
   identity. For team gates use retrievable PR reviews or the team's approval system.
   For a solo project use the actual explicit chat decision and identify it as such.
-- No self-approval. No checkbox, commit author, generated status or Git merge alone is
+- No agent self-approval. An authorized human driving Claude may approve a routine
+  plan; this is distinct from a teammate's final merge review. No checkbox, label,
+  commit author, generated status or Git merge alone is
   evidence of a human's intended decision. Resolve inaccessible evidence before proceeding.
 - Changing an upstream artifact or policy invalidates downstream records. Keep history
   and obtain the changed decision. A result also becomes stale when Git-visible code,
