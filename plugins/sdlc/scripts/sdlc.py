@@ -18,7 +18,9 @@ STAGES = ('intent', 'spec', 'plan')
 RESULTS = ('verification', 'review', 'delivery', 'learning')
 GUIDANCE = ('SKILL.md', 'skills', 'agents', 'references', 'templates', 'scripts/sdlc.py')
 DEVIATIONS = '\n## Implementation deviations'
-HOOK = 'python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/sdlc-guard.py"'
+GUARD = '"${CLAUDE_PROJECT_DIR}/.claude/hooks/sdlc-guard.py"'
+# A branch without the committed guard must not lock the session: a missing file allows.
+HOOK = f'[ ! -f {GUARD} ] || python3 {GUARD}'
 
 
 def now():

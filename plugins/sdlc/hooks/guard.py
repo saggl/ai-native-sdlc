@@ -68,7 +68,15 @@ def check_edit(root, config, tool_input):
               'environment or a secret manager instead.')
 
 
+def executable_text(command):
+    """Drop heredoc bodies and quoted prose (commit messages, PR bodies) before matching."""
+    # ponytail: lexical, not a shell parser; quoted payloads of `-c` and `eval` stay matched.
+    command = re.sub(r"<<-?\s*['\"]?(\w+)['\"]?.*?\n\s*\1\b", ' ', command, flags=re.S)
+    return re.sub(r"""(?<!-c )(?<!eval )("(?:[^"\\]|\\.)*"|'[^']*')""", ' ', command)
+
+
 def check_command(config, command):
+    command = executable_text(command)
     for gate in config.get('gates') or []:
         env = gate.get('require_env', '')
         try:
