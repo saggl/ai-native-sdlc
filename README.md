@@ -23,6 +23,34 @@ In Claude Code:
 Using another agent? See [Codex](docs/guide.md#codex) or [OpenCode](docs/guide.md#opencode).
 If Claude commands do not appear, use `/reload-plugins` or open a new session.
 
+## Your first change
+
+You do not create or manage the SDLC artifacts yourself. The agent creates each one,
+shows it to you and waits for the corresponding decision before continuing.
+
+1. Start with the outcome you want:
+
+   ```text
+   /sdlc:start Add CSV import with clear errors for invalid rows
+   ```
+
+   The agent creates `intent.md` with the problem, outcome, scope and constraints.
+   Review it and reply `Intent approved`.
+
+2. Run `/sdlc:start` again. The agent creates `spec.md` with the required behavior
+   and acceptance criteria. Review it and reply `Spec approved`.
+
+3. Run `/sdlc:start` again. The agent creates `plan.md` with the implementation
+   approach and checks. Review it and reply `Plan approved`.
+
+4. Run `/sdlc:start` again. The agent implements the approved plan, verifies the
+   acceptance criteria and obtains a fresh independent agent review.
+
+5. Review the resulting PR normally. A teammate's GitHub **Approve** is the final merge
+   approval under your project's existing policy.
+
+The same `/sdlc:start` command resumes the change from its last approved decision.
+
 ## How it works
 
 | You decide | The agent saves and does |
@@ -41,8 +69,10 @@ In Claude Code these are `/sdlc:start`, `/sdlc:status` and `/sdlc:review <change
 
 ## Teams
 
-**One change, one PR.** Stage replies record decisions; GitHub **Approve** handles the
-final merge review under your team's policy. See [roles and the sequence](docs/guide.md#team-workflow).
+**One change, one branch, one PR.** Intent, spec and plan decisions stay on that change
+until implementation and final merge review. Stage replies record decisions; GitHub
+**Approve** handles the final merge review under your team's policy. See
+[roles and the sequence](docs/guide.md#team-workflow).
 
 Project context lives in `.sdlc/project.json`; decisions and evidence in `changes/<id>/`.
 Local records detect stale content, but do not authenticate approvals. Existing CI and
