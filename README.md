@@ -12,12 +12,12 @@ delivery. It uses your existing repository, CI and release process.
 
 ## Start
 
-Install the plugin for your agent, then use the same entry point for the whole change:
+Install the plugin for your agent, then use its single entry point for the whole change:
 
 | Agent | Command |
 | --- | --- |
-| Claude Code | `/sdlc:sdlc Add CSV import with clear errors for invalid rows` |
-| Codex | Invoke the installed `sdlc` skill and describe the change |
+| Claude Code | `/sdlc:run Add CSV import with clear errors for invalid rows` |
+| Codex | Invoke the installed `run` skill and describe the change |
 | OpenCode | `/sdlc Add CSV import with clear errors for invalid rows` |
 
 For Claude Code:
@@ -25,7 +25,7 @@ For Claude Code:
 ```text
 /plugin marketplace add saggl/ai-native-sdlc
 /plugin install sdlc@ai-native-sdlc
-/sdlc:sdlc Add CSV import with clear errors for invalid rows
+/sdlc:run Add CSV import with clear errors for invalid rows
 ```
 
 Using Codex or OpenCode? See [setup and use](docs/guide.md#setup-and-use).
