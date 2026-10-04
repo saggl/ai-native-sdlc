@@ -1,14 +1,24 @@
 # Review policy
 
-Read approved intent/spec/plan and the complete relevant implementation diff.
-Check behavior, logic, security, compatibility, project constraints, acceptance
-evidence and departures from the approved baseline. Inspect changed tests for
-weakened assertions; deterministic style checks belong in CI.
+Read approved intent/spec/plan and the complete diff. Tune this file monthly (review owner).
 
-Block on incorrect behavior, material unapproved deviation, a violated required
-constraint or missing required verification. Report location, impact and evidence;
-distinguish demonstrated failures from suspicions. Cap optional nits at five.
+## Passes
+1. **Bugs:** logic errors, edge cases, weakened or skipped tests.
+2. **Security:** input handling, secrets, authorization, unsafe dependencies.
+3. **Compliance:** behavior against spec.md and plan.md (every AC, deviations), and design principles.
 
-Record review findings and criterion coverage in the change folder's review.md.
-State whether this was a fresh review and which checks were personally run.
-Review is evidence for the existing merge/release decision, not that decision itself.
+## What Important means
+Incorrect behavior, material unapproved deviation, a violated required constraint,
+missing required verification, or a security flaw. Report location, impact and evidence;
+separate demonstrated failures from suspicions.
+
+## Cap the nits
+At most five; summarize the rest as a count.
+
+## Do not report
+Generated files and anything CI already enforces (formatting, lint, types).
+
+## Output
+Record findings and AC coverage in review.md. State whether the review was fresh and which
+checks you ran. End with `Tally: important=N nit=N`. Review informs the merge/release
+decision; it is not that decision.

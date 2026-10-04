@@ -33,6 +33,8 @@ Use the bundled `templates/review-policy.md` as REVIEW.md only if no review poli
 actual product. Resolve conflicting policy with its owner.
 
 Show a brief setup summary and any decision that blocks the task, then capture its
-intent. Do not ask the user to complete a questionnaire or configure optional integrations
-before the first task. Setup is local and repeatable; plugin updates do not rewrite it.
+intent. Do not ask the user to complete a questionnaire before the first task. Offer, in
+one short question, the opt-ins: hooks (protected paths, locked tests, secrets, approval
+gates, format) and CI templates. Run `install` only on a yes. Non-negotiable gates
+belong in managed settings owned by platform/IT. Setup is local and repeatable; plugin updates do not rewrite it.
 
