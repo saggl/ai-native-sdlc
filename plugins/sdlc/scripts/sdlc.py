@@ -433,7 +433,8 @@ def copy_new(source, target):
     """Copy once; an identical file is a no-op and a different one is never overwritten."""
     if target.exists():
         if target.read_bytes() != source.read_bytes():
-            raise ValueError(f'{target.name} exists with different content; merge it by hand')
+            raise ValueError(f'{target.name} exists with different content. Merge it by hand, '
+                             'or delete it to take the bundled version')
         return False
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
@@ -463,7 +464,8 @@ def install(root, name):
     pairs = [(PLUGIN / source, safe_path(root, target)) for source, target in files.items()]
     for source, target in pairs:  # Refuse before copying anything: no half-installed monitor.
         if target.exists() and target.read_bytes() != source.read_bytes():
-            raise ValueError(f'{target.name} exists with different content; merge it by hand')
+            raise ValueError(f'{target.name} exists with different content. Merge it by hand, '
+                             'or delete it to take the bundled version')
     copied += [target.relative_to(root).as_posix() for source, target in pairs if copy_new(source, target)]
     return {'installed': copied}
 
