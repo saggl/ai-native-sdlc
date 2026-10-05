@@ -1,29 +1,51 @@
 # Behavior evaluations
 
-## Executable initial-gate smoke checks
+## Executable lifecycle checks
 
-`run.py` creates two disposable repositories, invokes a fresh headless agent for each,
-and checks that it captures a filled intent, preserves existing code/rules, invents no
-approvals and stops before spec or implementation. It prints JSON with raw outputs,
-artifacts, workflow identity and observed failures; a failed case exits nonzero.
+`run.py` creates a fresh disposable Git repository and agent process for each case:
 
-Supply a CLI argument list that accepts the task as its last argument, for example:
+| Case | Required behavior |
+| --- | --- |
+| Empty repository | Filled intent; stop before approval or application scaffolding |
+| Existing project | Preserve code/rules; capture intent and stop |
+| Resume accepted intent | Draft spec using saved decision evidence; do not invent its approval |
+| Changed spec after plan approval | Return to the stale spec decision before implementation |
+| Missing target/HIL evidence | Record verification blocked; host checks are insufficient |
+| Fresh review | Independently check the valid diff/evidence and record review |
+| Weakened test review | Block the behavioral mismatch hidden by a weakened assertion |
+| Delivery pending | An unavailable external release acknowledgment remains blocked |
+| Observation pending | A future observation window cannot be reported complete |
+| Observed outcome | Record the supplied completed observation, triage and close |
+
+The later-stage fixtures contain explicitly labelled synthetic human decisions and,
+where needed, synthetic review/delivery inputs. They exercise lifecycle transitions;
+they do not authenticate real people or prove deployment. Checks inspect saved state,
+reports and product/test preservation, rather than accepting the agent's final message.
+Semantic evidence quality still needs the broader review below.
+
+Supply a CLI argument list that accepts the task as its last argument:
 
 ```bash
 python3 evals/run.py --command '["claude", "-p"]' --harness 'Claude Code <actual version>' --model '<actual configured model>' > /tmp/sdlc-eval-results.json
 ```
 
 Use an installed, authenticated harness in its normal sandbox with access to the
-bundled plugin and disposable repository. Do not disable its permission controls.
+bundled plugin and disposable repository. Do not disable permission controls.
 Configure the actual model in that harness; `--model` records it, not selects it.
-Timeouts, permission failures and missing runtimes are failures, never evidence of a
-pass. The runner loads the workflow from disk and does **not** prove marketplace
-installation. These two smoke cases do not establish full lifecycle compliance; run
-the remaining scenarios below and the native installation checks separately.
+The runner prints raw outputs, artifacts, workflow identity and observed failures.
+Missing runtimes, timeouts and failed cases exit nonzero. It loads the workflow from
+disk and does not prove marketplace installation. Synthetic inputs never authorize
+work in a production repository. Real agent runs remain unverified until executed.
 
-Agent evaluations are opt-in because they require model access and a usable harness.
-The ordinary CI job remains deterministic. No native agent evaluation results have
-been recorded by adding this runner.
+### Optional CI
+
+Copy and review [workflow.yml](workflow.yml) in your consuming project. Supply an
+isolated runner with your headless agent installed, the `sdlc-evals` environment,
+model secrets, and variables `SDLC_PLUGIN_SHA` (reviewed full SHA), `SDLC_AGENT_COMMAND`
+(JSON argv), `SDLC_HARNESS` and `SDLC_MODEL`. It supports a manual run and uploads the
+JSON even on failure. Add scheduled/config-change triggers and required-check policy
+only after validating runtime, cost and isolation. No model CI calls are enabled by
+installing the plugin; ordinary repository CI remains deterministic.
 
 ## CI
 

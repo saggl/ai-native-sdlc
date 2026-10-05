@@ -127,51 +127,6 @@ class WorkflowTests(unittest.TestCase):
         plan.write_text('# plan\nA different approach.\n')
         self.assertEqual(self.next(), 'approve-plan')
 
-    def test_locked_tests_cannot_change_before_results(self):
-        (self.root / 'test_app.py').write_text('assert value == 2\n')
-        self.prepare()
-        with self.assertRaisesRegex(ValueError, 'ls-files|did not match'):
-            sdlc.lock_tests(self.root, 'csv-import', ['missing_test.py'])
-        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        self.commit()
-        (self.root / 'test_app.py').write_text('assert True\n')
-        self.commit()
-        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
-            self.result('verification')
-        (self.root / 'test_app.py').write_text('assert value == 2\n')
-        self.commit()
-        self.assertEqual(self.result('verification')['outcome'], 'passed')
-
-    def test_test_locks_cannot_be_replaced_without_revised_plan(self):
-        (self.root / 'test_app.py').write_text('assert False\n')
-        self.prepare()
-        original = sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        self.assertEqual(sdlc.lock_tests(self.root, 'csv-import', ['test_app.py']), original)
-        self.commit()
-        (self.root / 'test_app.py').write_text('assert True\n')
-        self.commit()
-        with self.assertRaisesRegex(ValueError, 'revised approved plan'):
-            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
-            self.result('verification')
-        (self.folder / 'plan.md').write_text('# Plan\nOwner-approved new regression scope.\n')
-        self.commit()
-        with self.assertRaisesRegex(ValueError, 'stale recorded plan'):
-            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        sdlc.record_approval(self.root, 'csv-import', 'plan', 'Owner', 'revised plan', 'Approved new scope.')
-        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        self.commit()
-        self.assertEqual(self.result('verification')['outcome'], 'passed')
-
-    def test_test_locks_cannot_be_extended_under_same_plan(self):
-        (self.root / 'test_app.py').write_text('assert False\n')
-        (self.root / 'test_other.py').write_text('assert False\n')
-        self.prepare()
-        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
-        self.commit()
-        with self.assertRaisesRegex(ValueError, 'revised approved plan'):
-            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py', 'test_other.py'])
-
     def test_legacy_test_locks_remain_protected(self):
         (self.root / 'test_app.py').write_text('assert False\n')
         self.prepare()
@@ -181,8 +136,9 @@ class WorkflowTests(unittest.TestCase):
         self.commit()
         (self.root / 'test_app.py').write_text('assert True\n')
         self.commit()
-        with self.assertRaisesRegex(ValueError, 'Legacy test locks'):
-            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
+            self.result('verification')
+        self.assertEqual(self.result('verification', 'blocked')['outcome'], 'blocked')
 
     def test_adopt_existing_intent_without_overwriting(self):
         folder = self.root / 'changes/from-monitor'
@@ -244,6 +200,63 @@ class WorkflowTests(unittest.TestCase):
         self.approve('intent')
         skill.write_text('Require authenticated requests and audit events.\n')
         self.assertEqual(self.next(), 'approve-intent')
+
+    def regression(self):
+        test = self.root / 'test_bug.py'
+        test.write_text('import app\nassert app.value == 2\n')
+        self.commit()
+        return sdlc.record_regression(self.root, 'csv-import', ['test_bug.py'],
+                                      [sys.executable, 'test_bug.py'])
+
+    def test_regression_observes_failure_and_survives_product_fix(self):
+        self.prepare()
+        record = self.regression()
+        self.assertEqual(record['exit_code'], 1)
+        self.assertIn('AssertionError', (self.folder / 'regression.md').read_text())
+        (self.root / 'app.py').write_text('value = 2\n')
+        self.commit()
+        self.result('verification')
+        self.assertEqual(self.next(), 'review')
+
+    def test_weakened_or_deleted_regression_blocks_passed_results(self):
+        self.prepare()
+        self.regression()
+        test = self.root / 'test_bug.py'
+        test.write_text('import app\nassert app.value >= 1\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'protected regression'):
+            self.result('verification')
+        test.unlink()
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'protected regression'):
+            self.result('verification')
+
+    def test_bugfix_requires_reproduction_and_cannot_relock_unchanged_plan(self):
+        self.prepare()
+        folder, data = sdlc.state(self.root, 'csv-import')
+        data['kind'] = 'bugfix'
+        sdlc.save(self.root, folder, data)
+        with self.assertRaisesRegex(ValueError, 'protected regression'):
+            self.result('verification')
+        self.regression()
+        with self.assertRaisesRegex(ValueError, 'revised approved plan'):
+            self.regression()
+
+    def test_regression_success_is_not_recorded_as_failure(self):
+        self.prepare()
+        (self.root / 'test_bug.py').write_text('assert True\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'observed 0'):
+            sdlc.record_regression(self.root, 'csv-import', ['test_bug.py'],
+                                   [sys.executable, 'test_bug.py'])
+        self.assertNotIn('regression', sdlc.state(self.root, 'csv-import')[1])
+
+    def test_regression_log_edit_invalidates_evidence(self):
+        self.prepare()
+        self.regression()
+        self.result('verification')
+        (self.folder / 'regression.md').write_text('Replaced failure log\n')
+        self.assertEqual(self.next(), 'implement-and-verify')
 
     def test_setup_preserves_project_files_and_custom_configuration(self):
         original = (self.root / 'CLAUDE.md').read_bytes()

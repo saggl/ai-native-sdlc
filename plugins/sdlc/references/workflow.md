@@ -17,13 +17,13 @@ text as arguments, never interpolate it as executable shell code.
 | Operation after `--root <project-root>` | Effect |
 | --- | --- |
 | `setup` | Create `.sdlc/project.json` once; preserve existing content |
-| `new <id> --title <title>` | Create a unique change folder, state and intent template |
-| `new <id> --title <title> --adopt` | Register an existing committed `changes/<id>/intent.md` (connector, monitor, scan, Tag) without overwriting it |
-| `lock-tests <id> --paths <path>...` | Hash committed failing/regression tests after plan approval; replacing locks requires a revised approved plan |
-| `install <hooks\|monitor>` | Opt-in, only on the user's explicit yes: `hooks` copies the guard to `.claude/hooks/sdlc-guard.py` and merges PreToolUse/PostToolUse entries into `.claude/settings.json`; `monitor` (experimental) copies `ci/monitor.yml` to `.github/workflows/sdlc-monitor.yml` plus `.sdlc/bands.py` and `bands.json`. Never overwrites |
+| `new <id> --title <title> [--kind bugfix]` | Create a unique change folder, state and intent template |
+| `new <id> --title <title> --adopt [--kind bugfix]` | Register an existing committed intent from a connector, monitor, scan or Tag without overwriting it |
+| `install <hooks\|monitor>` | Opt-in, only on the user’s explicit yes; install the guard or experimental monitor without overwriting files |
 | `status [id]` | Infer next stage; check saved artifact and evidence fingerprints; may report `workflow_changed: true` |
 | `draft <id> spec` / `draft <id> plan` | Create the next template after prior decisions |
 | `record-approval <id> <intent\|spec\|plan> --by <human> --evidence <reference> --decision <exact-decision>` | Record a real human decision on committed artifacts |
+| `record-regression <id> --file <test-path> --command-json <argv> [--expected-exit 1]` | Observe a failing committed check and protect its test files |
 | `record-result <id> <verification\|review\|delivery\|learning> --outcome <passed\|blocked> --report <relative-path>` | Bind a report to the code and upstream artifacts |
 
 Reports are named `verification.md`, `review.md`, `delivery.md`, `learning.md` in that
@@ -77,8 +77,7 @@ identity nor parses comments: the agent inspects sources through available tools
   hash. `workflow_changed: true` means installed guidance differs from the guidance that
   produced the latest record for a stage or result: recheck and re-record affected
   decisions/results against current guidance; historical records do not keep the warning
-  active. It is not a
-  missing approval. Legacy records remain readable but do not establish which workflow
+  active. It is not a missing approval. Legacy records remain readable but do not establish which workflow
   produced them.
 - Plan text from `## Implementation deviations` to the end is outside the plan approval
   snapshot. Optional `project.json` keys used by the guard: `protected_paths` (globs),
@@ -97,7 +96,8 @@ identity nor parses comments: the agent inspects sources through available tools
   rewriting approved history.
 
 Use [stage actions](stages.md) for execution. Existing branch rules, CI, protected
-environments and permissions remain authoritative. Hooks and the monitor are opt-in, installed only
-through `install` after the user's explicit yes; nothing is active by default. The helper
-never calls models or product commands. No credentials, auto-merge or deployment access
-are installed.
+environments and permissions remain authoritative. Hooks and the monitor are opt-in,
+installed only through `install` after the user’s explicit yes; nothing is active by default.
+No credentials, auto-merge or deployment access are installed. Only `record-regression`
+runs a supplied project check; the helper never calls models. An optional GitHub adapter
+is distributed separately and installed only when requested.

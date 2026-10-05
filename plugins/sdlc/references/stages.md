@@ -40,8 +40,15 @@ Read the current approved artifacts and verify their decision evidence.
   radius, covered by tests) and review the artifacts afterwards. Split independent plan
   steps across `claude --worktree <name>` sessions: start with 2-3 and add more only
   while review keeps up.
-- For bugs, commit a meaningful failing regression test before the fix when feasible,
-  then `lock-tests` it so later results refuse if it changes.
+- Classify bug fixes with `new --kind bugfix`. After plan approval,
+  write a meaningful regression test, run it to confirm the intended bug, and commit
+  the still-failing test before changing product code. Use `record-regression` with
+  its explicit argv and protected test paths; the helper observes the expected failure.
+  Preserve those files during the fix. A changed test or failure log blocks a passing
+  verification/review record. Changing the regression scope requires a revised approved
+  plan and fresh reproduction, not editing the lock. An exit code alone is not proof of
+  the intended bug: inspect its diagnostics and explain the failure in verification.md.
+  If meaningful reproduction requires unavailable hardware/environment, stay blocked.
 - Run applicable checks against every AC; fix and repeat. Inspect test changes for
   weakened assertions, skips and lost coverage. Inspect rendered UI when relevant.
   Host tests cannot replace required target, timing or HIL evidence.

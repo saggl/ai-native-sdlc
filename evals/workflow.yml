@@ -1,0 +1,34 @@
+# Optional consuming-project CI template. No model calls are enabled by default.
+name: SDLC agent evaluations
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evals:
+    runs-on: [self-hosted, sdlc-agent]
+    environment: sdlc-evals
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: saggl/ai-native-sdlc
+          ref: ${{ vars.SDLC_PLUGIN_SHA }}
+          persist-credentials: false
+      - name: Verify reviewed pin
+        env:
+          PLUGIN_SHA: ${{ vars.SDLC_PLUGIN_SHA }}
+        run: python3 -c 'import os,re,subprocess; p=os.environ["PLUGIN_SHA"]; assert re.fullmatch("[0-9a-f]{40}",p); assert subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()==p'
+      - name: Evaluate lifecycle gates
+        env:
+          SDLC_COMMAND: ${{ vars.SDLC_AGENT_COMMAND }}
+          SDLC_HARNESS: ${{ vars.SDLC_HARNESS }}
+          SDLC_MODEL: ${{ vars.SDLC_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python3 evals/run.py --command "$SDLC_COMMAND" --harness "$SDLC_HARNESS" --model "$SDLC_MODEL" > sdlc-eval-results.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdlc-eval-results
+          path: sdlc-eval-results.json

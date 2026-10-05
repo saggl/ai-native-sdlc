@@ -1,0 +1,46 @@
+# Copy to the consuming project's .github/workflows/sdlc.yml after reviewing setup.
+name: SDLC handoff
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: sdlc-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  continue:
+    if: >-
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+       (startsWith(github.event.comment.body, '@sdlc ') ||
+        startsWith(github.event.comment.body, 'Intent approved ') ||
+        startsWith(github.event.comment.body, 'Spec approved ') ||
+        startsWith(github.event.comment.body, 'Plan approved ')))
+    # Supply an isolated, disposable runner with the selected headless agent installed.
+    runs-on: [self-hosted, sdlc-agent]
+    environment: sdlc-automation
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: saggl/ai-native-sdlc
+          # Set this variable to a reviewed full commit SHA, never a moving branch.
+          ref: ${{ vars.SDLC_PLUGIN_SHA }}
+          path: .sdlc-plugin
+          persist-credentials: false
+      - name: Verify plugin pin
+        env:
+          PLUGIN_SHA: ${{ vars.SDLC_PLUGIN_SHA }}
+        run: python3 -c 'import os,re,subprocess; p=os.environ["PLUGIN_SHA"]; assert re.fullmatch("[0-9a-f]{40}",p); assert subprocess.check_output(["git","-C",".sdlc-plugin","rev-parse","HEAD"],text=True).strip()==p'
+      - name: Continue through the trusted adapter
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python3 .sdlc-plugin/adapters/github/run.py --root "$GITHUB_WORKSPACE"

@@ -67,6 +67,14 @@ class GuardTests(unittest.TestCase):
                                                 'closed_at': '2026-01-01'}))
         self.assertEqual(self.write('tests/test_a.py').returncode, 0)
 
+    def test_observed_regression_tests_are_protected(self):
+        self.config(changes_dir='changes')
+        self.lock(closed=False)
+        state = self.root / 'changes/fix/state.json'
+        state.write_text(json.dumps({'regression': {'tests': {'tests/test_bug.py': 'digest'}}}))
+        self.assertEqual(self.write('tests/test_bug.py').returncode, 2)
+        self.assertEqual(self.write('tests/test_a.py').returncode, 0)
+
     def test_secret_blocked(self):
         self.config()
         self.assertEqual(self.write('a.py', 'k = "ghp_' + 'a' * 36 + '"').returncode, 2)

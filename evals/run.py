@@ -1,8 +1,8 @@
-"""Run initial-gate smoke evaluations through an explicitly supplied agent CLI.
+"""Run lifecycle gate evaluations through an explicitly supplied agent CLI.
 
 The command is a JSON argument list; the task is appended as its last argument.
 No shell, automatic installs, model credentials or production projects are used.
-This tests workflow behavior, not marketplace installation or the entire lifecycle.
+This tests workflow gates with synthetic decisions, not native installation or production delivery.
 """
 import argparse
 from datetime import datetime, timezone
@@ -11,6 +11,9 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import scenarios
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / 'plugins/sdlc'
@@ -74,9 +77,9 @@ def main():
         parser.error('--timeout must be positive')
     report = {'workflow': sdlc.workflow_provenance(), 'harness': args.harness,
               'model': args.model, 'started_at': datetime.now(timezone.utc).isoformat(),
-              'scope': 'Initial intent gate only; native installation and later stages unverified',
+              'scope': 'Lifecycle gates with synthetic approvals; native installation, real identity and production delivery unverified',
               'cases': []}
-    for case in ('empty-repository', 'preserve-existing-project'):
+    for case in ('empty-repository', 'preserve-existing-project') + scenarios.CASES:
         with tempfile.TemporaryDirectory(prefix='sdlc-eval-') as directory:
             root = Path(directory)
             git(root, 'init')
@@ -98,12 +101,17 @@ def main():
                       'Preserve existing behavior. Delivery is a reviewed code handoff. '
                       'I have not approved intent, spec or plan. Stop at the first decision and '
                       'present the artifact for my review. Do not request installation or optional integrations.')
+            if case in scenarios.CASES:
+                task, protected = scenarios.prepare(root, case, sdlc)
+                prompt = (f'Read the run skill at {PLUGIN / "skills/run/SKILL.md"}. '
+                          f'Plugin root: {PLUGIN}. ' + task)
             result = {'name': case, 'task': prompt, 'command': command}
             try:
                 run = subprocess.run(command + [prompt], cwd=root, capture_output=True,
                                      text=True, timeout=args.timeout)
                 result.update(returncode=run.returncode, stdout=run.stdout, stderr=run.stderr)
-                failures = check_initial_gate(root, original)
+                failures = (scenarios.check(root, case, protected, sdlc) if case in scenarios.CASES
+                            else check_initial_gate(root, original))
                 if run.returncode:
                     failures.insert(0, f'Agent exited with {run.returncode}')
                 result['artifacts'] = {str(p.relative_to(root)): p.read_text(errors='replace')

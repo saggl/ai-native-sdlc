@@ -112,6 +112,8 @@ into `.claude/settings.json`) or `install monitor` (experimental: copies
 never overwritten. Guard rules come from `protected_paths`, `gates` and
 `commands.format` in `.sdlc/project.json`. Non-negotiable gates belong in managed
 settings owned by platform/IT.
+Gate regexes inspect the full command, including quoted text and heredocs, so they can
+also flag prose mentioning a gated command. They do not parse shell semantics or provide a sandbox.
 
 ### CI with Claude
 
@@ -147,7 +149,7 @@ integrated by intake, not reimplemented.
 | Skills as institutional knowledge | [spec stage](../plugins/sdlc/references/stages.md#prepare-draft--or-approve-) | Skill paths in `policy_files` join approval snapshots |
 | Hooks as build-time guardrails | [guard](../plugins/sdlc/hooks/guard.py) | Opt-in via `install hooks`; protected paths, locked tests, format |
 | Parallel sessions and subagents | [verifier](../plugins/sdlc/agents/verifier.md) | `claude --worktree` sessions; fresh-context verifier |
-| Feedback loop | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Failing test first, then `lock-tests` |
+| Feedback loop | [build stage](../plugins/sdlc/references/stages.md#build-implement-and-verify) | Failing test first, then `record-regression` |
 | Continuous evals in CI | [CI evals](#ci-with-claude), [eval runner](../evals/run.py) | Run on configuration changes and nightly; gate on pass rate |
 | AI in the PR review loop | [review policy](../plugins/sdlc/templates/review-policy.md), [CI review](#ci-with-claude) | Bugs, Security, Compliance; `Tally:` line; managed Code Review or claude-code-action reads it |
 | Hooks as approval gates | [guard](../plugins/sdlc/hooks/guard.py) | `gates` in project.json; managed settings for non-negotiable gates |
@@ -155,6 +157,31 @@ integrated by intake, not reimplemented.
 | Closing the loop | [bands](../plugins/sdlc/scripts/bands.py), [monitor template](../plugins/sdlc/ci/monitor.yml) | Experimental, `install monitor`; deterministic bands: 1σ log, 2σ read-only diagnosis, 3σ intent PR |
 | Recurring codebase scans | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Claude Security scans; bounded fix is a patch PR, wider finding an adopted intent, dismissals need a reason |
 | Claude on call with Claude Tag | [observe intake](../plugins/sdlc/references/stages.md#observe-observe-and-learn) | Tag, channel and ticket requests enter by the same intake; post-mortem in learning.md |
+
+## Protected bug fixes
+
+For a bug fix, the agent creates the change with `--kind bugfix`, obtains the usual
+intent/spec/plan decisions, commits a meaningful failing regression test, then runs:
+
+```text
+python3 <plugin-root>/scripts/sdlc.py --root <project-root> record-regression <id> --file tests/test_bug.py --command-json '["python3", "-m", "pytest", "tests/test_bug.py"]'
+```
+
+The supplied command runs without a shell and must return the expected nonzero exit
+(default 1; use `--expected-exit` for your test runner). The agent must inspect why it
+failed. Protected test content and the failure log are bound to the approved plan.
+A passed result cannot be recorded after those files change. Reproduce again only
+following a revised approved plan. Hardware-dependent reproduction remains blocked
+without actual target evidence. Legacy changes remain readable and are not retroactively
+classified as bug fixes. This is result-time enforcement, not a per-edit hook or an
+authorization service; fresh review must still check test strength and surrounding code.
+
+## Optional GitHub automation
+
+See the [GitHub adapter](../adapters/github/README.md) for explicit owner approvals,
+revision-pinned comment handoffs, fresh review processes and bounded repair cycles.
+It is installed separately in the consuming project and stops before merge/release.
+The standard plugin stays guided and keeps the same single command.
 
 ## Validate a change
 
@@ -167,11 +194,11 @@ Tests cover real Git repositories, stale evidence, data preservation and install
 CI runs on Linux, Windows and macOS. For agent behavior and native installation, use the
 [behavior evaluations](../evals/README.md); Python tests alone do not prove those work.
 The opt-in `evals/run.py` runs
-two initial-gate smoke cases through a supplied agent CLI; it does not replace native
-installation or full lifecycle evaluations.
+lifecycle gate cases through a supplied agent CLI; synthetic decisions do not replace
+native installation, real identity checks or production delivery verification.
 Version 0.4.0 changes the workflow hash scope, so open records show `workflow_changed`
-once and the agent rechecks them. The policy template is now `review-policy.md`; an
-existing project REVIEW.md is untouched.
+until affected current records are rechecked. The policy template is now `review-policy.md`;
+an existing project REVIEW.md is untouched.
 Record results and unavailable checks in the PR. Keep both plugin manifest versions aligned.
 
 ## Basis

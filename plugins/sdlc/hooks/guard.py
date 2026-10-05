@@ -47,7 +47,8 @@ def relative(root, raw):
 def locked_by(root, config, rel):
     for state in sorted((root / config.get('changes_dir', 'changes')).glob('*/state.json')):
         data = load_json(state)
-        if not data.get('closed_at') and rel in (data.get('locked_tests') or {}):
+        tests = {**(data.get('locked_tests') or {}), **(data.get('regression') or {}).get('tests', {})}
+        if not data.get('closed_at') and rel in tests:
             return state.parent.name
     return None
 
