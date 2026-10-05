@@ -35,6 +35,9 @@ class WorkflowTests(unittest.TestCase):
         (self.root / 'app.py').write_text('value = 1\n')
         (self.root / '.gitignore').write_text('__pycache__/\n*.pyc\n')
         sdlc.setup(self.root)
+        legacy = sdlc.config(self.root)
+        legacy.pop('approval_stages')
+        sdlc.write_json(self.root / '.sdlc/project.json', legacy)
         sdlc.new(self.root, 'csv-import', 'CSV import')
         self.folder = self.root / 'changes/csv-import'
 
@@ -68,6 +71,63 @@ class WorkflowTests(unittest.TestCase):
     def next(self):
         return sdlc.status(self.root, 'csv-import')['next']
 
+    def adaptive(self):
+        config = sdlc.config(self.root)
+        config['approval_stages'] = ['plan']
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        for stage in sdlc.STAGES:
+            if stage != 'intent':
+                sdlc.draft(self.root, 'csv-import', stage)
+            (self.folder / (stage + '.md')).write_text(f'# {stage}\nConcrete decision.\n')
+        self.commit()
+
+    def test_combined_plan_decision_binds_all_three_artifacts(self):
+        self.adaptive()
+        self.assertEqual(self.next(), 'approve-plan')
+        self.approve('plan')
+        self.assertEqual(self.next(), 'implement-and-verify')
+        data = sdlc.state(self.root, 'csv-import')[1]
+        self.assertEqual([r['stage'] for r in data['approvals']], ['plan'])
+        self.result('verification')
+        (self.folder / 'intent.md').write_text('# Changed outcome\n')
+        self.assertEqual(self.next(), 'approve-plan')
+        with self.assertRaisesRegex(ValueError, 'plan'):
+            self.result('review')
+
+    def test_escalation_requires_real_upstream_decision(self):
+        self.adaptive()
+        sdlc.require_decision(self.root, 'csv-import', 'spec', 'Authentication contract unresolved')
+        self.assertEqual(self.next(), 'approve-spec')
+        with self.assertRaisesRegex(ValueError, 'spec'):
+            self.approve('plan')
+        self.approve('spec')
+        self.approve('plan')
+        self.assertEqual(self.next(), 'implement-and-verify')
+
+    def test_new_concern_does_not_reuse_an_older_stage_decision(self):
+        self.adaptive()
+        self.approve('spec')
+        self.approve('plan')
+        sdlc.require_decision(self.root, 'csv-import', 'spec', 'New unresolved security concern')
+        self.assertEqual(self.next(), 'approve-spec')
+        self.approve('spec')
+        self.assertEqual(self.next(), 'implement-and-verify')
+
+    def test_adaptive_drafting_does_not_accept_unfinished_intent(self):
+        config = sdlc.config(self.root)
+        config['approval_stages'] = ['plan']
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        with self.assertRaisesRegex(ValueError, 'Finish intent'):
+            sdlc.draft(self.root, 'csv-import', 'spec')
+
+    def test_invalid_gate_policy_cannot_remove_plan_approval(self):
+        self.adaptive()
+        config = sdlc.config(self.root)
+        config['approval_stages'] = []
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        with self.assertRaisesRegex(ValueError, 'include plan'):
+            self.next()
+
     def test_workflow_change_is_reported_without_regressing_next_action(self):
         self.prepare()
         record = sdlc.state(self.root, 'csv-import')[1]['approvals'][-1]
@@ -90,7 +150,7 @@ class WorkflowTests(unittest.TestCase):
             (copy / 'hooks/guard.py').write_text('changed\n')
             self.assertEqual(module.workflow_provenance()['sha256'], before)
             guidance = copy / 'references/stages.md'
-            guidance.write_bytes(guidance.read_bytes().replace(b'\n', b'\r\n'))
+            guidance.write_bytes(guidance.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
             self.assertEqual(module.workflow_provenance()['sha256'], before)
             (copy / 'references/stages.md').write_text('changed\n')
             self.assertNotEqual(module.workflow_provenance()['sha256'], before)

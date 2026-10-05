@@ -74,14 +74,17 @@ policy; record agreed owners and adaptations in REVIEW.md. One person may hold s
 | Merge | Teammate, with required checks passing | GitHub **Approve** |
 | Release | Existing release authority | Existing release process |
 
-1. The agent saves an artifact and presents a revision-pinned link in the change PR.
+1. The agent drafts the artifacts and presents revision-pinned links in the change PR
+   at each required gate; the routine plan gate includes all three artifacts.
 2. Its owner comments with approval or feedback, linking the presentation comment.
    No SHA to type.
 3. Resume by invoking the same `sdlc` command. The agent checks the decision and advances.
 4. After plan approval, the agent implements, tests and obtains fresh agent review.
 5. Mark the same PR ready for the project's final merge review, then release normally.
 
-Intent, spec and plan remain sequential decisions. A stage reply is not a merge approval;
+New projects draft routine intent, spec and plan without intermediate approvals;
+`Plan approved` covers all three revisions. Ambiguity or significant risk adds a gate
+at the affected stage. Missing `approval_stages` retains the legacy sequential policy. A stage reply is not a merge approval;
 labels and generic “looks good” do not count. Changed decisions need approval again;
 new code alone does not revoke unchanged artifact decisions. Solo projects and other
 hosts keep their existing merge/release policy.

@@ -23,17 +23,22 @@ class EvalChecksTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def fill_preparation(self):
+        for stage in ('spec', 'plan'):
+            (self.root / ('changes/csv-import/' + stage + '.md')).write_text('# Concrete ' + stage + '\n')
+
     def test_accepts_initial_gate_and_added_instruction_pointer(self):
+        self.fill_preparation()
         with (self.root / 'CLAUDE.md').open('a') as stream:
             stream.write('Use the SDLC run skill.\n')
         self.assertEqual(evals.check_initial_gate(self.root, self.original), [])
 
-    def test_rejects_implementation_and_premature_spec(self):
+    def test_rejects_implementation_and_incomplete_preparation(self):
         (self.root / 'app.py').write_text('value = 2\n')
         (self.root / 'changes/csv-import/spec.md').write_text('# Spec\nPremature\n')
         failures = evals.check_initial_gate(self.root, self.original)
         self.assertTrue(any('app.py' in failure for failure in failures))
-        self.assertTrue(any('downstream' in failure for failure in failures))
+        self.assertTrue(any('Plan was not filled' in failure for failure in failures))
 
     def test_rejects_fabricated_approval_and_scaffold(self):
         folder, data = evals.sdlc.state(self.root, 'csv-import')

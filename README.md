@@ -45,12 +45,12 @@ If Claude commands do not appear, use `/reload-plugins` or open a new session.
 
 For the CSV import example above:
 
-1. The agent asks who needs the import and what success looks like, then presents
-   `intent.md`. Give feedback or reply `Intent approved`.
-2. It drafts `spec.md` with the required behavior, such as how invalid rows are handled.
-   Revise it or reply `Spec approved`.
-3. It drafts `plan.md` with the implementation approach and checks.
-   Revise it or reply `Plan approved`. Implementation begins only after this approval.
+1. The agent asks questions that affect the outcome and drafts concise `intent.md`,
+   `spec.md` and `plan.md` together for a clear, routine change.
+2. Review the goal, behavior and approach, then reply `Plan approved`. This one decision
+   covers all three presented revisions; implementation starts afterwards.
+3. Unclear requirements or significant risk need an earlier intent or spec decision.
+   Existing projects retain their configured approval gates.
 4. The agent implements, tests and obtains an independent agent review against those decisions.
    It pauses for missing decisions or blocked checks.
 5. Merge and release follow your project's policy. The agent records delivery evidence,
@@ -61,10 +61,10 @@ allows it. The agent saves the decision and the reviewed revision. For GitHub te
 the responsible owner comments in the change PR, linking the presentation comment:
 
 ```text
-Intent approved <presentation-comment-url>
+Plan approved <presentation-comment-url>
 ```
 
-Use `Spec approved` and `Plan approved` the same way. The agent supplies the link and
+Use `Intent approved` or `Spec approved` when an earlier gate is required. The agent supplies the link and
 checks the owner and revision. Implementation may finish before release or the outcome
 can be observed; those steps remain pending until there is actual evidence.
 

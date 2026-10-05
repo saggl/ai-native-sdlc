@@ -5,14 +5,14 @@ Follow the section matching the next action from `status`.
 
 ## Prepare: draft-* or approve-*
 
-Read saved artifacts and actual approval evidence. Start at the earliest missing or
-stale decision. Replace template prompts; keep each artifact as short as its decision
+Read saved artifacts and actual approval evidence. Start at the earliest missing artifact or
+required stale decision. Apply adaptive gates from workflow.md before advancing. Replace template prompts; keep each artifact as short as its decision
 allows. Link existing sources and evidence instead of duplicating them.
 
 1. **Intent:** capture problem, affected people/systems, measurable outcome, scope and
    constraints. Ask only questions that change the decision. Present it to its owner
-   using the team handoff in workflow.md when applicable.
-2. **Spec:** after intent approval, run `draft <id> spec`. Inspect the code and policies.
+   when outcome ambiguity or project policy requires an intent gate; otherwise draft spec.
+2. **Spec:** after any required intent decision, run `draft <id> spec`. Inspect the code and policies.
    Define behavior, failure cases, interfaces and stable `AC-1`, `AC-2` criteria.
    Apply relevant available domain skills. In spec.md, retain the generation request,
    model/harness when known, and applied skill/policy paths and versions or hashes.
@@ -20,16 +20,17 @@ allows. Link existing sources and evidence instead of duplicating them.
    decisions; record external sources with immutable versions where available. State
    unavailable provenance rather than inventing it. For front-end work link the Claude
    Design mock or export in spec.md. Resolve blocking concerns with
-   their owner; present behavior for human approval.
-3. **Plan:** after spec approval, run `draft <id> plan`. Use plan mode when available.
+   their owner; add a spec gate for unresolved behavior or significant risk, otherwise draft plan.
+3. **Plan:** after any required spec decision, run `draft <id> plan`. Use plan mode when available.
    Name real files, ordered steps, risks, relevant alternatives, a check for every AC,
-   and delivery/recovery. Present the approach for technical approval. Do not implement
+   and delivery/recovery. Present intent, spec and plan together for approval of the complete approach;
+   earlier required decisions still need their own evidence. Do not implement
    product code yet. If plan mode prevents saving, request the needed mode change;
    leaving plan mode is not approval of an unseen artifact. Record later departures in
    plan.md under `## Implementation deviations` in the same commit; material ones
    return to approval.
 
-Use the [approval procedure](workflow.md#team-decisions-on-one-pr) at each handoff.
+Use the [approval procedure](workflow.md#team-decisions-on-one-pr) at each required gate.
 After plan approval, proceed within the approved scope and permissions.
 
 ## Build: implement-and-verify

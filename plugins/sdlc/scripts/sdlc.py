@@ -95,7 +95,7 @@ def setup(root):
         return config(root)
     safe_path(root, 'changes')
     data = {'schema': 1, 'created_with': VERSION, 'changes_dir': 'changes',
-            'commands': {}, 'policy_files': [], 'owners': {},
+            'commands': {}, 'policy_files': [], 'owners': {}, 'approval_stages': ['plan'],
             'delivery': 'Use the project release process; no automatic merge or deployment.',
             'observe': 'Choose a real signal and owner before recording delivery as observed.'}
     write_json(path, data, exclusive=True)
@@ -214,11 +214,43 @@ def approval_valid(root, folder, data, stage):
     except FileNotFoundError:
         return False
     records = [r for r in data['approvals'] if r['stage'] == stage]
-    return bool(records and records[-1]['snapshot'] == snapshot)
+    latest = next((i for i in range(len(data['approvals']) - 1, -1, -1)
+                   if data['approvals'][i]['stage'] == stage), -1)
+    return bool(records and records[-1]['snapshot'] == snapshot
+                and latest >= data.get('decision_after', {}).get(stage, 0))
+
+
+def required_stages(root, data):
+    # Missing configuration retains the original sequential policy.
+    configured = config(root).get('approval_stages', list(STAGES))
+    extra = data.get('required_approvals', [])
+    if (not isinstance(configured, list) or not isinstance(extra, list)
+            or any(stage not in STAGES for stage in configured + extra)
+            or 'plan' not in configured):
+        raise ValueError('approval_stages must include plan and contain only intent/spec/plan')
+    return tuple(stage for stage in STAGES if stage in configured or stage in extra)
+
+
+def require_decision(root, slug, stage, reason):
+    folder, data = state(root, slug)
+    if data.get('closed_at'):
+        raise ValueError('This change is complete')
+    if not reason.strip():
+        raise ValueError('Explain the unresolved decision or risk')
+    data.setdefault('required_approvals', [])
+    if stage not in data['required_approvals']:
+        data['required_approvals'].append(stage)
+    if data.get('decision_reasons', {}).get(stage) != reason:
+        data.setdefault('decision_after', {})[stage] = len(data['approvals'])
+    data.setdefault('decision_reasons', {})[stage] = reason
+    save(root, folder, data)
+    return {'stage': stage, 'reason': reason}
 
 
 def require_approvals(root, folder, data, stages):
     for stage in stages:
+        if stage not in required_stages(root, data):
+            continue
         if not approval_valid(root, folder, data, stage):
             raise ValueError(f'Missing or stale recorded {stage} approval; verify the human decision')
 
@@ -228,6 +260,10 @@ def draft(root, slug, stage):
     if data.get('closed_at'):
         raise ValueError('This change is complete; create a new change for follow-up work')
     require_approvals(root, folder, data, STAGES[:STAGES.index(stage)])
+    for previous in STAGES[:STAGES.index(stage)]:
+        text = decided_text(root, folder, previous)
+        if not text.strip() or '<!-- SDLC:' in text or '[[SDLC_TITLE]]' in text:
+            raise ValueError(f'Finish {previous}.md before drafting {stage}')
     copy_template(root, folder, stage, data['title'])
     return {'created': str(folder.relative_to(root) / (stage + '.md'))}
 
@@ -444,7 +480,8 @@ def status(root, slug, snapshot=None):
         if not safe_path(root, folder.relative_to(root) / (stage + '.md')).exists():
             result['next'] = 'draft-' + stage
             return result
-        if not approval_valid(root, folder, data, stage):
+        if stage in required_stages(root, data) and not approval_valid(root, folder, data, stage):
+            result['decision_reason'] = data.get('decision_reasons', {}).get(stage)
             result['next'] = 'approve-' + stage
             return result
     code = (snapshot or code_snapshot)(root)
@@ -540,6 +577,10 @@ def main():
     command = commands.add_parser('draft')
     command.add_argument('id')
     command.add_argument('stage', choices=STAGES)
+    command = commands.add_parser('require-decision')
+    command.add_argument('id')
+    command.add_argument('stage', choices=STAGES)
+    command.add_argument('--reason', required=True, type=nonempty)
     command = commands.add_parser('record-approval')
     command.add_argument('id')
     command.add_argument('stage', choices=STAGES)
@@ -568,6 +609,8 @@ def main():
             result = status(root, args.id) if args.id else all_status(root)
         elif args.command == 'draft':
             result = draft(root, args.id, args.stage)
+        elif args.command == 'require-decision':
+            result = require_decision(root, args.id, args.stage, args.reason)
         elif args.command == 'record-approval':
             result = record_approval(root, args.id, args.stage, args.by, args.evidence, args.decision)
         elif args.command == 'record-regression':
