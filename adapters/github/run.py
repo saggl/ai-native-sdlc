@@ -153,17 +153,19 @@ def run_stage(root, slug, config, prompt, review, invoke):
     folder, before = sdlc.state(root, slug)
     fixed = ('approvals', 'closed_at')
     if review:
-        fixed += ('regression', 'locked_tests', 'locked_tests_plan')
+        fixed += ('regression',)
     protected = {key: before.get(key) for key in fixed}
     allowed = 'review' if review else 'verification'
     records = [r for r in before['results'] if r['kind'] != allowed]
     artifacts = sdlc.artifact_snapshot(root, folder, 'plan') if review else None
+    plan = sdlc.file_digest(root, folder.relative_to(root) / 'plan.md') if review else None
     invoke(root, config['command'], prompt, config['timeout_seconds'], review=review)
     folder, after = sdlc.state(root, slug)
     if ({key: after.get(key) for key in fixed} != protected
             or [r for r in after['results'] if r['kind'] != allowed] != records):
         raise ValueError('Agent changed decisions or results outside its stage; no changes published')
-    if review and sdlc.artifact_snapshot(root, folder, 'plan') != artifacts:
+    if review and (sdlc.artifact_snapshot(root, folder, 'plan') != artifacts or
+                   sdlc.file_digest(root, folder.relative_to(root) / 'plan.md') != plan):
         raise ValueError('Fresh reviewer changed approved artifacts; no changes published')
 
 

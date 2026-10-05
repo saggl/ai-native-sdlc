@@ -93,9 +93,6 @@ def setup(root):
     path = safe_path(root, '.sdlc/project.json')
     if path.exists():
         return config(root)
-    legacy = safe_path(root, '.sdlc/package-lock.json')
-    if legacy.exists():
-        raise ValueError('Legacy copied package found. Follow the installed plugin references/migrate.md first.')
     safe_path(root, 'changes')
     data = {'schema': 1, 'created_with': VERSION, 'changes_dir': 'changes',
             'commands': {}, 'policy_files': [], 'owners': {},
@@ -158,11 +155,24 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def canonical_content(content):
+    """Ignore checkout-only CRLF changes in text, preserving binary bytes."""
+    if b'\0' in content:
+        return content
+    try:
+        content.decode('utf-8')
+    except UnicodeDecodeError:
+        return content
+    return content.replace(b'\r\n', b'\n')
+
+
 def file_digest(root, relative, required=True):
     path = safe_path(root, relative)
-    if not path.exists() and not required:
-        return None
-    return sha(path.read_bytes())
+    if not path.exists():
+        if not required:
+            return None
+        raise FileNotFoundError(path)
+    return sha(canonical_content(path.read_bytes()))
 
 
 def decided_text(root, folder, stage):
@@ -186,18 +196,16 @@ def workflow_provenance():
     """Identify the guidance that steers the agent, including unversioned local edits."""
     paths = [PLUGIN / name for name in GUIDANCE]
     paths = [p for root in paths for p in ([root] if root.is_file() else root.rglob('*'))]
-    files = {path.relative_to(PLUGIN).as_posix(): sha(path.read_bytes())
+    files = {path.relative_to(PLUGIN).as_posix(): sha(canonical_content(path.read_bytes()))
              for path in sorted(paths) if path.is_file() and path.suffix in ('.md', '.py', '.json')}
     return {'version': VERSION, 'sha256': sha(json.dumps(files, sort_keys=True).encode())}
 
 
 def workflow_changed(data):
-    # Legacy records predate provenance; the version alone is not compared.
     latest = {('approval', r['stage']): r for r in data['approvals']}
     latest.update({('result', r['kind']): r for r in data['results']})
     current = workflow_provenance()['sha256']
-    return any(r['workflow'].get('sha256') != current
-               for r in latest.values() if 'workflow' in r)
+    return any(r.get('workflow', {}).get('sha256') != current for r in latest.values())
 
 
 def approval_valid(root, folder, data, stage):
@@ -287,7 +295,7 @@ def code_snapshot(root):
         if path.is_symlink():
             content, mode = os.fsencode(os.readlink(path)), '120000'
         elif path.is_file():
-            content = path.read_bytes()
+            content = canonical_content(path.read_bytes())
             mode = modes.get(name, '100644')
             if os.name != 'nt':
                 mode = '100755' if path.stat().st_mode & 0o111 else '100644'
@@ -374,6 +382,7 @@ def result_valid(root, folder, data, kind, code):
                 and regression_valid(root, folder, data)
                 and last.get('regression') == data.get('regression')
                 and last['artifacts'] == artifact_snapshot(root, folder, 'plan')
+                and last['plan_full'] == file_digest(root, folder.relative_to(root) / 'plan.md')
                 and last['report_sha'] == file_digest(root, last['report'])
                 and last['prerequisites'] == prerequisite_snapshot(data, kind))
     except FileNotFoundError:
@@ -385,13 +394,6 @@ def prerequisite_snapshot(data, kind):
                                     sort_keys=True).encode())
             for previous in RESULTS[:RESULTS.index(kind)]
             if any(r['kind'] == previous for r in data['results'])}
-
-
-def require_locked_tests(root, data):
-    # Read-only compatibility for projects that used the earlier lock-only records.
-    for path, digest in data.get('locked_tests', {}).items():
-        if file_digest(root, path, required=False) != digest:
-            raise ValueError(f'Locked test changed: {path}; preserve the test or start a new owner-reviewed change')
 
 
 def record_result(root, slug, kind, outcome, report):
@@ -410,8 +412,6 @@ def record_result(root, slug, kind, outcome, report):
     if not text.strip() or '[[SDLC_TITLE]]' in text or '<!-- SDLC:' in text:
         raise ValueError('Replace report template prompts with actual evidence')
     require_committed_code(root)
-    if outcome == 'passed':
-        require_locked_tests(root, data)
     code = code_snapshot(root)
     for previous in RESULTS[:RESULTS.index(kind)]:
         if not result_valid(root, folder, data, previous, code):
@@ -420,6 +420,7 @@ def record_result(root, slug, kind, outcome, report):
               'report_sha': report_sha, 'code': code, 'recorded_at': now(),
               'commit': git(root, 'rev-parse', 'HEAD').decode().strip(),
               'artifacts': artifact_snapshot(root, folder, 'plan'),
+              'plan_full': file_digest(root, folder.relative_to(root) / 'plan.md'),
               'workflow': workflow_provenance(), 'regression': data.get('regression'),
               'prerequisites': prerequisite_snapshot(data, kind)}
     data['results'].append(record)

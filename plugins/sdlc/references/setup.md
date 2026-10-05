@@ -1,8 +1,7 @@
 # Set up this project while starting the first task
 
 Inspect instructions, manifests, build/test targets, CI and relevant code. Run `setup`
-to create `.sdlc/project.json`. If a legacy copied package is detected, read the bundled
-`references/migrate.md`; preserve historical changes and local customizations.
+to create `.sdlc/project.json`. Preserve existing project content and local customizations.
 
 Fill the project config from evidence, preserving existing values on later runs:
 
@@ -33,9 +32,7 @@ Use the bundled `templates/review-policy.md` as REVIEW.md only if no review poli
 actual product. Resolve conflicting policy with its owner.
 
 Show a brief setup summary and any decision that blocks the task, then capture its
-intent. Do not ask the user to complete a questionnaire before the first task. Offer, in
-one short question, the opt-ins: hooks (protected paths, locked tests, secrets, approval
-gates, format) and, when the project has a metric to watch, the experimental monitor.
-Run `install` only on a yes. Non-negotiable gates
-belong in managed settings owned by platform/IT. Setup is local and repeatable; plugin updates do not rewrite it.
-
+intent. Do not ask the user to complete a questionnaire before the first task.
+Hooks and experimental monitoring are advanced opt-ins in the guide; offer them when
+the user requests that control. Non-negotiable gates belong in managed settings owned
+by platform/IT. Setup is local and repeatable; plugin updates do not rewrite it.
