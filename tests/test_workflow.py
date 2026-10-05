@@ -191,7 +191,7 @@ class WorkflowTests(unittest.TestCase):
             (copy / 'hooks/guard.py').write_text('changed\n')
             self.assertEqual(module.workflow_provenance()['sha256'], before)
             guidance = copy / 'references/stages.md'
-            guidance.write_bytes(guidance.read_bytes().replace(b'\n', b'\r\n'))
+            guidance.write_bytes(guidance.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
             self.assertEqual(module.workflow_provenance()['sha256'], before)
             (copy / 'references/stages.md').write_text('changed\n')
             self.assertNotEqual(module.workflow_provenance()['sha256'], before)
