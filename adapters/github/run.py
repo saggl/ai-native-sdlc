@@ -193,7 +193,7 @@ def cycle(root, slug, config, invoke=agent):
     attempts = 0
     while True:
         action = sdlc.status(root, slug)['next']
-        if action in ('deliver', 'observe-and-learn', 'complete'):
+        if action in ('ready-for-merge', 'deliver', 'observe-and-learn', 'complete'):
             return action
         review = action == 'review'
         workflow = 'review.md' if review else 'start.md'

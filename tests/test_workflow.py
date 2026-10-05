@@ -37,6 +37,7 @@ class WorkflowTests(unittest.TestCase):
         sdlc.setup(self.root)
         legacy = sdlc.config(self.root)
         legacy.pop('approval_stages')
+        legacy.pop('followup_stages')
         sdlc.write_json(self.root / '.sdlc/project.json', legacy)
         sdlc.new(self.root, 'csv-import', 'CSV import')
         self.folder = self.root / 'changes/csv-import'
@@ -127,6 +128,46 @@ class WorkflowTests(unittest.TestCase):
         sdlc.write_json(self.root / '.sdlc/project.json', config)
         with self.assertRaisesRegex(ValueError, 'include plan'):
             self.next()
+
+    def test_core_readiness_needs_verification_and_review_but_no_release_claim(self):
+        config = sdlc.config(self.root)
+        config['followup_stages'] = []
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        self.prepare()
+        self.result('verification')
+        self.assertEqual(self.next(), 'review')
+        self.result('review', 'blocked')
+        self.assertEqual(self.next(), 'review')
+        self.result('review')
+        self.assertEqual(self.next(), 'ready-for-merge')
+        data = sdlc.state(self.root, 'csv-import')[1]
+        self.assertNotIn('closed_at', data)
+        self.assertEqual([r['kind'] for r in data['results']], ['verification', 'review', 'review'])
+        (self.root / 'app.py').write_text('value = 2\n')
+        self.assertEqual(self.next(), 'implement-and-verify')
+
+    def test_invalid_followup_policy_cannot_skip_verification(self):
+        config = sdlc.config(self.root)
+        config['followup_stages'] = ['learning']
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        self.prepare()
+        with self.assertRaisesRegex(ValueError, 'followup_stages'):
+            self.next()
+
+    def test_delivery_can_be_required_without_observation(self):
+        config = sdlc.config(self.root)
+        config['followup_stages'] = ['delivery']
+        sdlc.write_json(self.root / '.sdlc/project.json', config)
+        self.prepare()
+        self.result('verification')
+        self.result('review')
+        self.assertEqual(self.next(), 'deliver')
+        self.result('delivery')
+        self.assertEqual(self.next(), 'complete')
+        with self.assertRaisesRegex(ValueError, 'stale verification'):
+            (self.root / 'app.py').write_text('value = 2\n')
+            self.commit()
+            self.result('learning')
 
     def test_workflow_change_is_reported_without_regressing_next_action(self):
         self.prepare()

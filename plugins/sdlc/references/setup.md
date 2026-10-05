@@ -12,13 +12,17 @@ Fill the project config from evidence, preserving existing values on later runs:
   approval snapshots. Keep this concise.
 - `owners`: discover actual owners and retrievable identities from project policy; ask
   only for the missing owner needed now. Use [workflow defaults](workflow.md#team-decisions-on-one-pr)
-  where no policy exists. Record agreed adaptations in REVIEW.md. Comment access alone
+  where no policy exists. Record agreed owners in project.json and link existing policy. Comment access alone
   does not establish authority; do not change repository settings during setup.
 - `approval_stages`: new projects default to `["plan"]` with risk-based escalation.
   Preserve stricter project policy and legacy configs without this key; changing their
   policy requires an explicit project decision.
 - `delivery`: existing release command or process, authorization and rollback route.
-- `observe`: the signal of success, where to read it, observation window and owner.
+- `followup_stages`: new projects default to `[]` (ready after verification/review).
+  Add `["delivery"]` or `["delivery", "learning"]` only when project policy requires it.
+  Preserve existing requirements; missing configuration retains the full lifecycle.
+- `observe`: when observation is requested or required, the real success signal,
+  source, observation window and owner. Do not invent monitoring to fill configuration.
 - `changes_dir`: default `changes`; use another unused evidence-only directory if that
   name already holds unrelated/product code. Do not move existing project content.
 
@@ -31,8 +35,10 @@ pointer to the project's active agent instructions (such as CLAUDE.md or AGENTS.
 using that agent's start entry point from the installed skill. Mention .sdlc/project.json
 and the configured changes directory. Add verified commands and recurring mistakes if
 missing; keep instructions short. Never replace project rules.
-Use the bundled `templates/review-policy.md` as REVIEW.md only if no review policy exists; adapt it to the
-actual product. Resolve conflicting policy with its owner.
+Use existing review policy when present. Do not generate a separate REVIEW.md just to
+start; the shared review stage supplies default passes. Resolve conflicting policy
+with its owner. Agent instructions are a short map to commands and authoritative
+repository knowledge; reusable domain skills are optional.
 
 Show a brief setup summary and any decision that blocks the task, then capture its
 intent. Do not ask the user to complete a questionnaire before the first task.

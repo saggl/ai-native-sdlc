@@ -81,7 +81,7 @@ request a fresh session and stop at that handoff. In Claude Code, use `/sdlc:run
 `/sdlc review change <id>`; in Codex, invoke the installed `run` skill with
 “review change <id>”.
 
-Review only if you did not implement the change. Read project instructions, REVIEW.md,
+Review only if you did not implement the change. Read project instructions, REVIEW.md when present,
 policies, approved artifacts, state.json and actual decision evidence.
 Inspect the complete relevant diff and surrounding code, including untracked work.
 Check logic, security, compatibility, every AC, test strength and plan deviations.
@@ -89,9 +89,9 @@ Re-run relevant safe checks; distinguish observations from the author's claims.
 Do not edit source, tests, policy, approval records or release configuration while
 reviewing. Safe tests may create ordinary build outputs.
 
-Run the Bugs, Security and Compliance passes from REVIEW.md and end Findings with its
-`Tally:` line. A mistake flagged a second time goes into CLAUDE.md; flag when the change
-makes CLAUDE.md outdated.
+Run Bugs, Security and Compliance (intent/spec/plan alignment) passes; apply REVIEW.md
+when present and end Findings with `Tally: Bugs <n>, Security <n>, Compliance <n>`. A repeated mistake should become a short lesson in the project agent instructions;
+flag stale instructions and link deeper repository knowledge instead of expanding them.
 
 Write review.md from its template: reviewed revision/files, fresh-session provenance,
 findings, criterion evidence and limitations. Missing required evidence, material
@@ -99,10 +99,10 @@ unapproved deviations or unresolved important findings mean `blocked`. Self-revi
 cannot pass this stage. The caller persists a delegated reviewer's report.
 
 The implementation session fixes within scope, repeats verification and obtains fresh
-review of changed code, rechecking applicable findings. Record review and continue on
-a pass. Review evidence does not authorize merge or release.
+review of changed code, rechecking applicable findings. Record review and report core readiness on
+a pass; continue to delivery only when requested or required by project policy. Review evidence does not authorize merge or release.
 
-## Deliver: deliver
+## Deliver: deliver (optional follow-up)
 
 Use the existing host, CI and release process. Update the existing change PR (create
 one only if absent), or its equivalent, linking
@@ -121,7 +121,7 @@ Write delivery.md from observed PR/CI/release evidence. A PR opened is not a dep
 Record `blocked` until the spec's delivery boundary has actually been reached; that
 boundary may be a firmware/library artifact handoff. Record `passed` only with evidence.
 
-## Observe: observe-and-learn
+## Observe: observe-and-learn (optional follow-up)
 
 Read the agreed outcome signal through available project tools. Respect its observation
 window. Write learning.md with expected versus observed outcome, time, evidence, owner

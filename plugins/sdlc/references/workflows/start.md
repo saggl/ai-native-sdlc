@@ -19,7 +19,11 @@ OpenCode, resolve the installed package root. Never write into the installed plu
    or what to change if none are open. For new work, run `new` with a unique short slug (`--kind bugfix` for a bug fix);
    suffix collisions, never overwrite.
 5. Follow the matching section in `<plugin-root>/references/stages.md`.
-   On `complete`, summarize delivery and learning; create follow-up only when needed.
+   On `ready-for-merge`, summarize verification/review and the remaining project merge
+   process, then stop. This is not a merge or release claim. If the user explicitly
+   requests delivery or observation, follow the corresponding section in stages.md;
+   keep its real prerequisites and evidence. On `complete`, summarize the required
+   recorded stages; never imply unrequested delivery or observation occurred.
 
 Continue after each evidenced human decision or passed check. Pause only for a missing
 decision, unmet requirement or external dependency. Never invent approval, reuse an old

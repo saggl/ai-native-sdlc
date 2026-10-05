@@ -114,6 +114,9 @@ class AdapterLifecycleTests(unittest.TestCase):
         adapter.sdlc.git(self.root, 'config', 'user.email', 'fixture@example.invalid')
         adapter.sdlc.git(self.root, 'config', 'core.autocrlf', 'false')
         adapter.sdlc.setup(self.root)
+        project = adapter.sdlc.config(self.root)
+        project['followup_stages'] = ['delivery', 'learning']
+        adapter.sdlc.write_json(self.root / '.sdlc/project.json', project)
         adapter.sdlc.new(self.root, 'change', 'Change')
         self.folder = self.root / 'changes/change'
         (self.root / 'app.py').write_text('value = 1\n')
@@ -141,6 +144,21 @@ class AdapterLifecycleTests(unittest.TestCase):
             calls.append(review)
             self.result('review' if review else 'verification')
         self.assertEqual(adapter.cycle(self.root, 'change', self.config, invoke), 'deliver')
+        self.assertEqual(calls, [False, True])
+
+    def test_core_cycle_stops_at_readiness_without_delivery(self):
+        project = adapter.sdlc.config(self.root)
+        project['followup_stages'] = []
+        adapter.sdlc.write_json(self.root / '.sdlc/project.json', project)
+        self.commit()
+        for stage in adapter.sdlc.STAGES:
+            adapter.sdlc.record_approval(self.root, 'change', stage, 'alice', 'fixture', 'Approved.')
+        self.commit()
+        calls = []
+        def invoke(*args, review=False):
+            calls.append(review)
+            self.result('review' if review else 'verification')
+        self.assertEqual(adapter.cycle(self.root, 'change', self.config, invoke), 'ready-for-merge')
         self.assertEqual(calls, [False, True])
 
     def test_cycle_bounds_repairs(self):
