@@ -117,6 +117,14 @@ identity nor parses comments: the agent inspects sources through available tools
 - Completed changes are historical. New incidents start a linked intent rather than
   rewriting approved history.
 
+Core readiness requires passed verification and independent review; the helper reports
+`ready-for-merge`, not delivered or observed. New projects use `followup_stages: []`.
+Projects may require `["delivery"]` or `["delivery", "learning"]` before completion.
+Missing configuration preserves the original full lifecycle. Set policy during setup;
+do not weaken an existing requirement to make a task appear finished. Explicitly
+requested follow-up can record delivery/learning through the same entry point, using
+real merge/release/observation evidence and the normal prerequisites.
+
 Use [stage actions](stages.md) for execution. Existing branch rules, CI, protected
 environments and permissions remain authoritative. Hooks and the monitor are opt-in,
 installed only through `install` after the user’s explicit yes; nothing is active by default.

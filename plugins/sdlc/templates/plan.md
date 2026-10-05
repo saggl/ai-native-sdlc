@@ -18,7 +18,7 @@ Sources: [intent](intent.md), [spec](spec.md)
 <!-- SDLC: Map every acceptance criterion to a meaningful check. -->
 
 ## Delivery and recovery
-<!-- SDLC: Existing PR/CI/release process, authorization and rollback; no invented commands. -->
+<!-- SDLC: Existing PR/CI handoff. Release authorization and recovery when relevant; no invented commands or unrequested monitoring. -->
 
 ## Implementation deviations
 <!-- SDLC: Harmless departures from this plan with the reason, in the same commit; material ones go back to approval. -->

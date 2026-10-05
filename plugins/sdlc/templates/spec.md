@@ -9,7 +9,7 @@ Source: [intent](intent.md)
 <!-- SDLC: Use stable AC-1, AC-2 identifiers with observable expected outcomes, including failures. -->
 
 ## Delivery and success
-<!-- SDLC: What counts as delivered; rollback route; outcome signal, source, observation window and owner. -->
+<!-- SDLC: Existing handoff boundary. Include release/recovery and outcome observation details only when required or requested; otherwise state follow-up is optional. -->
 
 ## Concerns and decisions
 <!-- SDLC: Risks, conflicting policies and unresolved decisions with owners; write None when resolved. -->

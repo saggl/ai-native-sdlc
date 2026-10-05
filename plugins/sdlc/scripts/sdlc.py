@@ -95,7 +95,7 @@ def setup(root):
         return config(root)
     safe_path(root, 'changes')
     data = {'schema': 1, 'created_with': VERSION, 'changes_dir': 'changes',
-            'commands': {}, 'policy_files': [], 'owners': {}, 'approval_stages': ['plan'],
+            'commands': {}, 'policy_files': [], 'owners': {}, 'approval_stages': ['plan'], 'followup_stages': [],
             'delivery': 'Use the project release process; no automatic merge or deployment.',
             'observe': 'Choose a real signal and owner before recording delivery as observed.'}
     write_json(path, data, exclusive=True)
@@ -482,6 +482,13 @@ def record_result(root, slug, kind, outcome, report):
     return record
 
 
+def required_results(root):
+    followup = config(root).get('followup_stages', ['delivery', 'learning'])
+    if followup not in ([], ['delivery'], ['delivery', 'learning']):
+        raise ValueError('followup_stages must be [], [delivery], or [delivery, learning]')
+    return ('verification', 'review') + tuple(followup)
+
+
 def status(root, slug, snapshot=None):
     folder, data = state(root, slug)
     result = {'id': slug, 'title': data['title'], 'path': str(folder.relative_to(root)),
@@ -502,10 +509,12 @@ def status(root, slug, snapshot=None):
             return result
     code = (snapshot or code_snapshot)(root)
     for kind, action in zip(RESULTS, ('implement-and-verify', 'review', 'deliver', 'observe-and-learn')):
+        if kind not in required_results(root):
+            continue
         if not result_valid(root, folder, data, kind, code):
             result['next'] = action
             return result
-    result['next'] = 'complete'
+    result['next'] = 'ready-for-merge' if required_results(root) == ('verification', 'review') else 'complete'
     return result
 
 

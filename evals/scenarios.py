@@ -18,6 +18,7 @@ def prepare(root, case, sdlc):
     (root / 'CLAUDE.md').write_text('Test: python test_app.py (exit zero). Preserve approved behavior.\n')
     sdlc.setup(root)
     config = sdlc.config(root)
+    config['followup_stages'] = ['delivery', 'learning']
     config['approval_stages'] = list(sdlc.STAGES)  # Explicit strict-policy lifecycle cases.
     config['commands'] = {'test': 'python test_app.py'}
     config['owners'] = {stage: 'Fixture Owner' for stage in sdlc.STAGES}

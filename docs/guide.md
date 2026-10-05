@@ -63,13 +63,13 @@ edits, and leaves project files and unrelated commands alone.
 ## Team workflow
 
 Use one branch and draft PR from intent through implementation. Follow existing project
-policy; record agreed owners and adaptations in REVIEW.md. One person may hold several roles.
+policy; record agreed owners in project.json and link existing policy. One person may hold several roles.
 
 | Decision | Default owner | Action |
 | --- | --- | --- |
-| Intent | Product or delegated task owner | Reply `Intent approved` |
-| Spec | Product/domain owner | Reply `Spec approved` |
-| Plan | Implementing engineer; teammate for significant risk | Reply `Plan approved` |
+| Intent, when gated | Product or delegated task owner | Reply `Intent approved` |
+| Spec, when gated | Product/domain owner | Reply `Spec approved` |
+| Combined plan decision | Authorized outcome/domain/technical owners | Reply `Plan approved` after reviewing all three artifacts |
 | Implementation within scope | Agent, with tests and fresh review | No per-edit human approval |
 | Merge | Teammate, with required checks passing | GitHub **Approve** |
 | Release | Existing release authority | Existing release process |
@@ -80,7 +80,7 @@ policy; record agreed owners and adaptations in REVIEW.md. One person may hold s
    No SHA to type.
 3. Resume by invoking the same `sdlc` command. The agent checks the decision and advances.
 4. After plan approval, the agent implements, tests and obtains fresh agent review.
-5. Mark the same PR ready for the project's final merge review, then release normally.
+5. Core readiness follows verification and fresh review. Mark the same PR ready for the project's final merge review, then release normally.
 
 New projects draft routine intent, spec and plan without intermediate approvals;
 `Plan approved` covers all three revisions. Ambiguity or significant risk adds a gate
@@ -94,9 +94,22 @@ authentication service or background watcher. See the bundled
 [approval rules](../plugins/sdlc/references/workflow.md#team-decisions-on-one-pr)
 for exact evidence and ambiguity handling.
 
+## Core readiness and follow-up
+
+New projects stop at `ready-for-merge`: verified implementation and independent review,
+with no unresolved important findings. This does not claim merge, release or observed
+product value. The three planning artifacts are intent/spec/plan; state.json and
+verification/review reports are agent-maintained evidence, not additional planning tasks.
+
+`followup_stages` in project.json defaults to `[]`. A project can require `["delivery"]`
+or `["delivery", "learning"]`; missing configuration preserves the original full
+lifecycle. Preserve existing policy during updates. The same entry point accepts an
+explicit request to record delivery or observe the outcome, with real evidence.
+
 ## Extend when needed
 
-Keep commands and recurring lessons in project agent instructions; reusable domain policy
+Keep project agent instructions a short map to commands, recurring lessons and deeper
+repository knowledge; reusable domain policy
 belongs in skills. Link authoritative Jira, Polarion or Teamcenter records instead of
 copying them. For embedded work, keep host, cross-build, simulation and target/HIL evidence
 distinct. Delivery may mean a firmware artifact handoff; required hardware checks still apply.
@@ -137,7 +150,9 @@ Use Anthropic's tools directly; this plugin supplies the policy they read.
 
 ## Playbook coverage
 
-Claude-first. On Codex and OpenCode, hook and CI checks fall back to the review gate.
+The core workflow is shared across Claude Code, Codex and OpenCode. The bundled hooks
+and Claude CI examples are optional, harness-specific integrations. Existing deterministic
+project CI remains authoritative on every harness; agent review does not replace it.
 Hosted products (Claude Security, Claude Tag, managed Code Review, Claude Design) are
 integrated by intake, not reimplemented.
 
@@ -162,8 +177,8 @@ integrated by intake, not reimplemented.
 
 ## Protected bug fixes
 
-For a bug fix, the agent creates the change with `--kind bugfix`, obtains the usual
-intent/spec/plan decisions, commits a meaningful failing regression test, then runs:
+For a bug fix, the agent creates the change with `--kind bugfix`, obtains the required
+adaptive intent/spec/plan decisions, commits a meaningful failing regression test, then runs:
 
 ```text
 python3 <plugin-root>/scripts/sdlc.py --root <project-root> record-regression <id> --file tests/test_bug.py --command-json '["python3", "-m", "pytest", "tests/test_bug.py"]'
@@ -201,6 +216,6 @@ Record results and unavailable checks in the PR. Keep both plugin manifest versi
 
 ## Basis
 
-This independent implementation follows
+This independent implementation is inspired by
 [Anthropic's playbook](https://claude.com/blog/the-ai-native-sdlc-playbook).
 Command names, folder layout and local records are this project's choices.

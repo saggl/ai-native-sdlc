@@ -60,7 +60,7 @@ privileged runner with untrusted jobs. Repository rules remain the final merge a
 
 The adapter publishes normal commits to the same feature branch, without force pushes.
 Concurrent head changes stop publication. Policy, workflow and agent-instruction edits
-require a manual handoff. It stops at delivery: merge, required CI and release follow
+require a manual handoff. It stops at core readiness (or the configured delivery handoff): merge, required CI and release follow
 existing project controls. Commits made with `GITHUB_TOKEN` may not trigger downstream
 workflows; use your reviewed GitHub App integration if those checks need to run automatically.
 No token or repository settings are created by this plugin.

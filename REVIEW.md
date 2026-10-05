@@ -2,7 +2,7 @@
 
 Review the request, approved decisions where present, full diff and verification evidence.
 For this plugin check installable layout, simple first use, resumption without old chat,
-project-data preservation, decision provenance, stale evidence and six-stage coverage.
+project-data preservation, decision provenance, stale evidence adaptive gates, small verified steps and optional lifecycle follow-up.
 
 Block on broken behavior, data loss, unsupported runtime claims, fabricated authorization,
 weakened checks or an unverified required acceptance criterion. Report specific evidence,
