@@ -1,6 +1,6 @@
 # AI-native SDLC
 
-Early preview · version `0.0.1`
+First public release · version `0.1.0`
 
 **Describe a change. Approve the decisions. Let your coding agent do the work.**
 
