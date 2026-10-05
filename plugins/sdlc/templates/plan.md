@@ -5,8 +5,12 @@ Sources: [intent](intent.md), [spec](spec.md)
 ## Approach and files
 <!-- SDLC: Chosen design, real files/components, alternatives and what could break. -->
 
-## Steps
-<!-- SDLC: Ordered implementation and feedback loop; failure reproduction first for bug fixes. -->
+## Implementation
+<!-- SDLC: Small coherent steps, each with a check and expected result; reproduce failures first for bug fixes. Replace these examples. -->
+- [ ] Implement one independently verifiable behavior
+  Verify: command or behavioral check, environment and expected result.
+- [ ] Integrate the behavior with existing callers
+  Verify: acceptance and regression checks, environment and expected result.
 
 ## Verification
 | Criterion | Check and expected result | Environment |

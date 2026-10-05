@@ -10,3 +10,7 @@ Read `<plugin-root>/references/workflow.md` and follow the Review section of
 `<plugin-root>/references/stages.md`. Read the raw artifacts and evidence yourself;
 do not accept the caller's verdict. Return the report for the caller to persist.
 Do not write approval records or merge anything.
+
+Check that steps stayed small and coherent, each completed step has observed verification,
+and the diff adds no unnecessary scope. Prefer deterministic CI for hard invariants;
+review intent alignment, edge cases and test strength independently.

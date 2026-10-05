@@ -182,6 +182,20 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual([c['next'] for c in changes], ['implement-and-verify'] * 2)
         self.assertEqual(snapshot.call_count, 1)
 
+    def test_progress_ticks_preserve_decision_but_invalidate_full_plan_evidence(self):
+        self.prepare()
+        plan = self.folder / 'plan.md'
+        plan.write_text('# Plan\n## Implementation\n- [ ] Add parser\n  Verify: parser tests pass.\n')
+        self.commit()
+        sdlc.record_approval(self.root, 'csv-import', 'plan', 'Owner', 'fixture', 'Approved.')
+        self.result('verification')
+        plan.write_text(plan.read_text().replace('[ ]', '[x]'))
+        self.assertTrue(sdlc.approval_valid(self.root, self.folder,
+                                          sdlc.state(self.root, 'csv-import')[1], 'plan'))
+        self.assertEqual(self.next(), 'implement-and-verify')
+        plan.write_text(plan.read_text().replace('parser tests pass', 'skip parser tests'))
+        self.assertEqual(self.next(), 'approve-plan')
+
     def test_plan_deviations_do_not_invalidate_plan_approval(self):
         self.prepare()
         plan = self.folder / 'plan.md'

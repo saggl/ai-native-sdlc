@@ -6,7 +6,7 @@
 ## Acceptance evidence
 | Criterion | Observed evidence | Result and limits |
 | --- | --- | --- |
-<!-- SDLC: Every criterion: pass, fail or unrun; distinguish host and target evidence. -->
+<!-- SDLC: Every criterion and completed implementation step: observed command/behavior, expected versus actual result, pass, fail or unrun; distinguish host and target evidence. -->
 
 ## Deviations and test integrity
 <!-- SDLC: What departed from the approved plan; approval for material changes; changed test rationale; for bug fixes, link the observed failing regression record and protected test revision. -->

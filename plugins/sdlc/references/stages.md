@@ -22,7 +22,8 @@ allows. Link existing sources and evidence instead of duplicating them.
    Design mock or export in spec.md. Resolve blocking concerns with
    their owner; add a spec gate for unresolved behavior or significant risk, otherwise draft plan.
 3. **Plan:** after any required spec decision, run `draft <id> plan`. Use plan mode when available.
-   Name real files, ordered steps, risks, relevant alternatives, a check for every AC,
+   Name real files, a checkbox list of small independently verifiable steps, risks,
+   relevant alternatives, a check and expected result for every step and AC,
    and delivery/recovery. Present intent, spec and plan together for approval of the complete approach;
    earlier required decisions still need their own evidence. Do not implement
    product code yet. If plan mode prevents saving, request the needed mode change;
@@ -37,10 +38,15 @@ After plan approval, proceed within the approved scope and permissions.
 
 Read the current approved artifacts and verify their decision evidence.
 
-- Implement the plan. After plan approval, auto-accept routine work (small blast
-  radius, covered by tests) and review the artifacts afterwards. Split independent plan
-  steps across `claude --worktree <name>` sessions: start with 2-3 and add more only
-  while review keeps up.
+- Implement one coherent plan step, run its verification and fix failures before advancing.
+  Mark its checkbox complete only after the expected result is observed. Keep evidence
+  in verification.md; a checked box is not evidence. Commit coherent units with explicit
+  paths. If the plan produces an oversized or inseparable change, split the scope before
+  coding and obtain any affected decision again. Prefer several small reviewable changes
+  over a large diff; do not use arbitrary line-count limits.
+- After plan approval, use the harness's authorized execution mode for routine edits.
+  Parallel implementation is optional and only appropriate for independent units when
+  explicitly requested; preserve each unit's verification and final integrated checks.
 - Classify bug fixes with `new --kind bugfix`. After plan approval,
   write a meaningful regression test, run it to confirm the intended bug, and commit
   the still-failing test before changing product code. Use `record-regression` with
@@ -50,7 +56,7 @@ Read the current approved artifacts and verify their decision evidence.
   plan and fresh reproduction, not editing the lock. An exit code alone is not proof of
   the intended bug: inspect its diagnostics and explain the failure in verification.md.
   If meaningful reproduction requires unavailable hardware/environment, stay blocked.
-- Run applicable checks against every AC; fix and repeat. Inspect test changes for
+- Run applicable deterministic tests, build, lint and behavioral checks against every AC; fix and repeat. Inspect test changes for
   weakened assertions, skips and lost coverage. Inspect rendered UI when relevant.
   Host tests cannot replace required target, timing or HIL evidence.
 - Record harmless file/order deviations with reasons in plan.md

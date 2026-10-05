@@ -106,8 +106,8 @@ def decision(api, root, number, response, config):
         except ValueError:
             raise ValueError('Presented artifact or upstream policy is stale')
         if path == (folder.relative_to(root) / 'plan.md').as_posix():
-            content = content.decode('utf-8').replace('\r\n', '\n').split(sdlc.DEVIATIONS, 1)[0]
-            current = current.decode('utf-8').replace('\r\n', '\n').split(sdlc.DEVIATIONS, 1)[0]
+            content = sdlc.decision_content(content.decode('utf-8'), 'plan')
+            current = sdlc.decision_content(current.decode('utf-8'), 'plan')
         if current != content:
             raise ValueError('Presented artifact or upstream policy is stale')
     return gate['id'], stage, presentation
