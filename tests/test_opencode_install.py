@@ -49,28 +49,6 @@ class OpenCodeInstallTests(unittest.TestCase):
                 installer.install(config)
             self.assertEqual((skill / 'SKILL.md').read_text(), 'my skill')
 
-    def test_update_removes_only_unchanged_legacy_commands(self):
-        with tempfile.TemporaryDirectory() as directory:
-            config = Path(directory) / 'opencode'
-            skill = config / 'skills/sdlc'
-            commands = config / 'commands'
-            skill.mkdir(parents=True)
-            commands.mkdir()
-            legacy = commands / installer.LEGACY_NAMES[0]
-            legacy.write_text('managed old command')
-            custom = commands / installer.LEGACY_NAMES[1]
-            custom.write_text('user-edited command')
-            (skill / installer.MARKER).write_text(json.dumps({
-                'commands': {
-                    installer.LEGACY_NAMES[0]: hashlib.sha256(legacy.read_bytes()).hexdigest(),
-                    installer.LEGACY_NAMES[1]: 'different-hash',
-                }
-            }))
-            installer.install(config)
-            self.assertFalse(legacy.exists())
-            self.assertEqual(custom.read_text(), 'user-edited command')
-            self.assertTrue((commands / 'sdlc.md').is_file())
-
     def test_upstream_update_replaces_only_unmodified_installed_commands(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -91,22 +69,3 @@ class OpenCodeInstallTests(unittest.TestCase):
                     installer.install(config)
                 self.assertEqual(installed.read_text(), 'local customization')
                 self.assertEqual((skill / installer.MARKER).read_bytes(), marker)
-
-    def test_legacy_marker_adopts_identical_commands_then_supports_update(self):
-        with tempfile.TemporaryDirectory() as directory:
-            config = Path(directory) / 'config'
-            skill = installer.install(config)
-            (skill / installer.MARKER).write_text('Installed by scripts/install_opencode.py\n')
-            installer.install(config)
-            self.assertIn('commands', (skill / installer.MARKER).read_text())
-
-    def test_legacy_marker_does_not_claim_differing_commands(self):
-        with tempfile.TemporaryDirectory() as directory:
-            config = Path(directory) / 'config'
-            skill = installer.install(config)
-            (skill / installer.MARKER).write_text('Installed by scripts/install_opencode.py\n')
-            command = config / 'commands/sdlc.md'
-            command.write_text('unknown older or user content')
-            with self.assertRaises(ValueError):
-                installer.install(config)
-            self.assertEqual(command.read_text(), 'unknown older or user content')

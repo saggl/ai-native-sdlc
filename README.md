@@ -1,5 +1,7 @@
 # AI-native SDLC
 
+Early preview · version `0.0.1`
+
 **Describe a change. Approve the decisions. Let your coding agent do the work.**
 
 You already use a coding agent to plan, implement, test and review changes. This plugin
@@ -54,16 +56,17 @@ For the CSV import example above:
 5. Merge and release follow your project's policy. The agent records delivery evidence,
    the observed outcome and any follow-up.
 
-| You decide | The agent saves and does |
-| --- | --- |
-| Problem and outcome | `intent.md` |
-| Required behavior | `spec.md` |
-| Approach and checks | `plan.md`, then implementation, tests and fresh review |
-| Merge and release under project policy | Delivery evidence, observed outcome and follow-up |
-
 For solo work, reply to the agent's presented document in chat when your project policy
 allows it. The agent saves the decision and the reviewed revision. For GitHub teams,
-the responsible owner replies to the document's presentation in the change PR.
+the responsible owner comments in the change PR, linking the presentation comment:
+
+```text
+Intent approved <presentation-comment-url>
+```
+
+Use `Spec approved` and `Plan approved` the same way. The agent supplies the link and
+checks the owner and revision. Implementation may finish before release or the outcome
+can be observed; those steps remain pending until there is actual evidence.
 
 ## Continue with the same command
 

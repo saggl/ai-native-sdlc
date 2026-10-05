@@ -7,4 +7,4 @@ Link the change folder and actual approval evidence. State which decisions remai
 Observed tests/evals and limitations. Name the native clients exercised, if any.
 
 ## Deviations and risks
-Material changes, compatibility/migration and pending external evidence.
+Material changes and pending external evidence.

@@ -10,8 +10,6 @@ PLUGIN = ROOT / 'plugins/sdlc'
 
 def validate():
     errors = []
-    if list((ROOT / '.claude/skills').glob('sdlc-*/SKILL.md')) or (ROOT / 'scripts/install.py').exists():
-        errors.append('Remove obsolete copied-package entry points')
     marketplace = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
     manifest = json.loads((PLUGIN / '.claude-plugin/plugin.json').read_text())
     portable = json.loads((PLUGIN / 'plugin.json').read_text())
@@ -62,29 +60,11 @@ def validate():
             for relative in re.findall(r'<plugin-root>/([\w./-]+)', text):
                 if not (PLUGIN / relative).is_file():
                     errors.append(f'Missing bundled resource: {relative}')
-            if '.sdlc/templates' in text or '.sdlc/workflow.md' in text:
-                if path.name != 'migrate.md':
-                    errors.append(f'Legacy runtime dependency: {path.relative_to(ROOT)}')
-    errors += coverage(ROOT / 'docs/guide.md')
     for path in sorted((PLUGIN / 'ci').glob('*.yml')):
         text = path.read_text()
         if not all(key in text for key in ('on:', 'permissions:', 'claude')):
             errors.append(f'CI template needs a trigger, explicit permissions and claude: {path.name}')
     errors += case_collisions(tracked_files())
-    return errors
-
-
-PLAYS = 16  # Anthropic AI-native SDLC playbook plays
-
-
-def coverage(guide):
-    """Every playbook play names at least one linked plugin asset."""
-    text = guide.read_text(encoding='utf-8').split('## Playbook coverage', 1)
-    rows = [line for line in text[-1].split('\n## ', 1)[0].splitlines()
-            if line.startswith('| ') and not line.startswith(('| Play', '| ---'))]
-    errors = [] if len(text) == 2 and len(rows) == PLAYS else [f'Playbook coverage needs {PLAYS} plays']
-    errors += [f'Play without a linked asset: {row.split("|")[1].strip()}'
-               for row in rows if '](' not in row.split('|')[2]]
     return errors
 
 

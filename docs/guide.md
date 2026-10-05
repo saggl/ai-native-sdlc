@@ -4,10 +4,8 @@
 
 Start with one real change. The agent discovers project commands and preserves existing
 instructions. Shared workflow updates leave project decisions and configuration intact.
-New records include the installed workflow version and content hash. Open decisions
-are rechecked when that guidance changes; older records remain readable but lack that
-provenance. Existing 0.2 records need no migration; copied 0.1 packages use the
-[migration instructions](../plugins/sdlc/references/migrate.md).
+Records include the installed workflow version and content hash; recheck open decisions
+when that guidance changes.
 
 ### Claude Code
 
@@ -32,9 +30,9 @@ an independent review in the same command, for example `/sdlc:run show status` o
 
 ### Codex
 
-Run `codex plugin marketplace add saggl/ai-native-sdlc`, then install the `run` skill
-from that source in the ChatGPT desktop Plugins Directory. Where the repository
-marketplace is available, enable it in `.codex/config.toml`:
+Run `codex plugin marketplace add saggl/ai-native-sdlc`, then install the `sdlc` plugin
+from that source in the ChatGPT desktop Plugins Directory. Invoke its `run` skill.
+Where the repository marketplace is available, enable it in `.codex/config.toml`:
 
 ```toml
 [plugins."sdlc@ai-native-sdlc"]
@@ -77,7 +75,8 @@ policy; record agreed owners and adaptations in REVIEW.md. One person may hold s
 | Release | Existing release authority | Existing release process |
 
 1. The agent saves an artifact and presents a revision-pinned link in the change PR.
-2. Its owner replies to that presentation with approval or feedback. No SHA to type.
+2. Its owner comments with approval or feedback, linking the presentation comment.
+   No SHA to type.
 3. Resume by invoking the same `sdlc` command. The agent checks the decision and advances.
 4. After plan approval, the agent implements, tests and obtains fresh agent review.
 5. Mark the same PR ready for the project's final merge review, then release normally.
@@ -104,7 +103,7 @@ credentials or automatic merge/deploy policy are installed.
 
 ### Opt-in hooks and monitoring
 
-After setup the agent offers one short question. On your explicit yes it runs
+When you choose an advanced control, the agent can run
 `install hooks` (copies the guard to `.claude/hooks/sdlc-guard.py` and merges entries
 into `.claude/settings.json`) or `install monitor` (experimental: copies
 `.github/workflows/sdlc-monitor.yml`, `.sdlc/bands.py` and `.sdlc/bands.json`; set
@@ -172,8 +171,7 @@ The supplied command runs without a shell and must return the expected nonzero e
 failed. Protected test content and the failure log are bound to the approved plan.
 A passed result cannot be recorded after those files change. Reproduce again only
 following a revised approved plan. Hardware-dependent reproduction remains blocked
-without actual target evidence. Legacy changes remain readable and are not retroactively
-classified as bug fixes. This is result-time enforcement, not a per-edit hook or an
+without actual target evidence. This is result-time enforcement, not a per-edit hook or an
 authorization service; fresh review must still check test strength and surrounding code.
 
 ## Optional GitHub automation
@@ -196,9 +194,6 @@ CI runs on Linux, Windows and macOS. For agent behavior and native installation,
 The opt-in `evals/run.py` runs
 lifecycle gate cases through a supplied agent CLI; synthetic decisions do not replace
 native installation, real identity checks or production delivery verification.
-Version 0.4.0 changes the workflow hash scope, so open records show `workflow_changed`
-until affected current records are rechecked. The policy template is now `review-policy.md`;
-an existing project REVIEW.md is untouched.
 Record results and unavailable checks in the PR. Keep both plugin manifest versions aligned.
 
 ## Basis

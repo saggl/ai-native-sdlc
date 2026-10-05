@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "sdlc",
-  "version": "0.4.0",
+  "version": "0.0.1",
   "description": "A guided, resumable AI-native SDLC for your own repositories.",
   "author": {"name": "Christian Sagstetter"},
   "repository": "https://github.com/saggl/ai-native-sdlc"

@@ -76,11 +76,10 @@ identity nor parses comments: the agent inspects sources through available tools
   New decisions and results also identify the installed workflow by version and content
   hash. `workflow_changed: true` means installed guidance differs from the guidance that
   produced the latest record for a stage or result: recheck and re-record affected
-  decisions/results against current guidance; historical records do not keep the warning
-  active. It is not a missing approval. Legacy records remain readable but do not establish which workflow
-  produced them.
+  decisions/results against current guidance. It is not a missing approval.
 - Plan text from `## Implementation deviations` to the end is outside the plan approval
-  snapshot. Optional `project.json` keys used by the guard: `protected_paths` (globs),
+  snapshot; verification and review bind to the full plan so later deviations need fresh
+  evidence. Optional `project.json` keys used by the guard: `protected_paths` (globs),
   `gates` (`[{match, require_env, action: block|ask, reason}]`), `commands.format` (argv).
   Gate regexes match the full Bash command, including quoted text and heredocs. They
   may also flag prose mentioning a gated command; they are not a shell parser or sandbox.

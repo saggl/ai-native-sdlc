@@ -49,10 +49,12 @@ installing the plugin; ordinary repository CI remains deterministic.
 
 ## CI
 
-`.github/workflows/agent-evals.yml` runs `evals/run.py` with Claude Code on pull requests
-touching `plugins/sdlc/**` or `evals/**` and weekly, then uploads `eval-results.json`. It
-skips with a notice when the `ANTHROPIC_API_KEY` secret is absent. Set the repository
-variable `EVAL_MODEL` to record the configured model. No run results exist until it runs.
+`.github/workflows/agent-evals.yml` can run `evals/run.py` with Claude Code on pull
+requests touching `plugins/sdlc/**` or `evals/**`, weekly, or manually. Set
+`RUN_AGENT_EVALS=true` and the `ANTHROPIC_API_KEY` secret to enable it. Without the
+variable the job is visibly skipped; when enabled without credentials it fails. Set
+`EVAL_MODEL` to record the configured model. A passing deterministic CI run does not
+establish agent behavior; inspect the uploaded JSON from an actual eval run.
 
 For user projects, see [CI with Claude](../docs/guide.md#ci-with-claude).
 
@@ -90,4 +92,3 @@ and pass/fail reasons. Deterministic Python tests do not establish these behavio
 Before a release, also test a real Claude Code marketplace installation and local
 `--plugin-dir` session. Run a complete small task in that runtime. Report any unavailable
 runtime checks explicitly. Keep only actual executed results in validation records.
-

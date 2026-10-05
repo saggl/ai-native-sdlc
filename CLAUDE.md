@@ -17,7 +17,7 @@ Python 3.10+, Git, standard library only.
 - Keep artifacts proportional to the decision. Create them when needed.
 - Add integrations and automation only for demonstrated needs.
 
-Preserve project data, existing commands and record compatibility. Keep checks for
+Preserve project data and existing commands. Keep checks for
 stale decisions, stale evidence and filesystem boundaries. Local records do not
 authenticate approval; unavailable checks stay unverified.
 

@@ -18,7 +18,7 @@ For a pull request:
    `python3 -m unittest discover -s tests -q` (Python 3.10+).
 3. State which native clients you actually tried. If none, say so; Python tests do not
    establish agent behavior. See [behavior evaluations](evals/README.md).
-4. Describe any compatibility, migration or approval-evidence impact.
+4. Describe any approval-evidence or project-data impact.
 
 The review standard is in [REVIEW.md](REVIEW.md). Small documentation fixes need only
 the checks relevant to them. The plugin's intent/spec/plan workflow is a tool you can

@@ -89,6 +89,9 @@ class WorkflowTests(unittest.TestCase):
             (copy / 'ci/monitor.yml').write_text('changed\n')
             (copy / 'hooks/guard.py').write_text('changed\n')
             self.assertEqual(module.workflow_provenance()['sha256'], before)
+            guidance = copy / 'references/stages.md'
+            guidance.write_bytes(guidance.read_bytes().replace(b'\n', b'\r\n'))
+            self.assertEqual(module.workflow_provenance()['sha256'], before)
             (copy / 'references/stages.md').write_text('changed\n')
             self.assertNotEqual(module.workflow_provenance()['sha256'], before)
 
@@ -127,17 +130,31 @@ class WorkflowTests(unittest.TestCase):
         plan.write_text('# plan\nA different approach.\n')
         self.assertEqual(self.next(), 'approve-plan')
 
-    def test_legacy_test_locks_remain_protected(self):
-        (self.root / 'test_app.py').write_text('assert False\n')
+    def test_plan_deviation_changes_require_fresh_verification_and_review(self):
         self.prepare()
-        folder, data = sdlc.state(self.root, 'csv-import')
-        data['locked_tests'] = {'test_app.py': sdlc.file_digest(self.root, 'test_app.py')}
-        sdlc.save(self.root, folder, data)
+        self.result('verification')
+        self.result('review')
         self.commit()
-        (self.root / 'test_app.py').write_text('assert True\n')
+        self.assertEqual(self.next(), 'deliver')
+        plan = self.folder / 'plan.md'
+        plan.write_text(plan.read_text() + '\n## Implementation deviations\nUsed a different helper.\n')
         self.commit()
-        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
-            self.result('verification')
+        self.assertTrue(sdlc.approval_valid(self.root, self.folder,
+                                            sdlc.state(self.root, 'csv-import')[1], 'plan'))
+        self.assertEqual(self.next(), 'implement-and-verify')
+
+    def test_approvals_and_results_survive_crlf_checkout(self):
+        self.prepare()
+        self.result('verification')
+        self.commit()
+        self.assertEqual(self.next(), 'review')
+        with tempfile.TemporaryDirectory() as temporary:
+            clone = Path(temporary) / 'windows-checkout'
+            subprocess.run(['git', '-c', 'core.autocrlf=true', 'clone', '-q',
+                            str(self.root), str(clone)], check=True)
+            self.assertIn(b'\r\n', (clone / '.sdlc/project.json').read_bytes())
+            self.assertEqual(sdlc.status(clone, 'csv-import')['next'], 'review')
+
         self.assertEqual(self.result('verification', 'blocked')['outcome'], 'blocked')
 
     def test_adopt_existing_intent_without_overwriting(self):
@@ -182,13 +199,6 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(sorted(sdlc.install(self.root, 'monitor')['installed']),
                          ['.github/workflows/sdlc-monitor.yml', '.sdlc/bands.json', '.sdlc/bands.py'])
         self.assertEqual(sdlc.install(self.root, 'monitor')['installed'], [])
-
-    def test_legacy_approvals_without_provenance_remain_readable(self):
-        self.approve('intent')
-        folder, data = sdlc.state(self.root, 'csv-import')
-        del data['approvals'][-1]['workflow']
-        sdlc.save(self.root, folder, data)
-        self.assertEqual(self.next(), 'draft-spec')
 
     def test_domain_skill_change_invalidates_approval(self):
         skill = self.root / '.claude/skills/domain/SKILL.md'
@@ -304,13 +314,6 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Symlink'):
             sdlc.new(self.root, 'escape', 'Escape')
         self.assertEqual(list(outside.iterdir()), [])
-
-    def test_legacy_package_is_detected_without_overwriting(self):
-        (self.root / '.sdlc/project.json').unlink()
-        (self.root / '.sdlc/package-lock.json').write_text('{}')
-        with self.assertRaisesRegex(ValueError, 'Legacy'):
-            sdlc.setup(self.root)
-        self.assertFalse((self.root / '.sdlc/project.json').exists())
 
     def test_cannot_skip_approval_or_overwrite_a_draft(self):
         with self.assertRaisesRegex(ValueError, 'intent'):

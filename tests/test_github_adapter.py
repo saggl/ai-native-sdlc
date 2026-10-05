@@ -186,6 +186,15 @@ class AdapterLifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'changed approved artifacts'):
             adapter.cycle(self.root, 'change', self.config, invoke)
 
+    def test_reviewer_cannot_change_plan_deviations(self):
+        self.result('verification')
+        def invoke(*args, review=False):
+            with (self.folder / 'plan.md').open('a') as plan:
+                plan.write('\n## Implementation deviations\nDifferent helper.\n')
+            self.commit()
+        with self.assertRaisesRegex(ValueError, 'changed approved artifacts'):
+            adapter.cycle(self.root, 'change', self.config, invoke)
+
     def presentation(self, stage, revision):
         url = 'https://github.com/owner/repo/pull/1#issuecomment-10'
         presentation = {'issue_url': 'https://api.github.com/repos/owner/repo/issues/1',
