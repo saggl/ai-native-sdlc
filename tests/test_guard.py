@@ -79,15 +79,20 @@ class GuardTests(unittest.TestCase):
         self.config(protected_paths=['*'])
         self.assertEqual(self.write('../outside.txt').returncode, 0)
 
-    def test_gates_ignore_quoted_prose_and_heredocs(self):
+    def test_gates_check_full_command_including_quoted_code(self):
         self.config(gates=[{'match': r'gh pr merge', 'require_env': 'MERGE_OK', 'reason': 'Merge needs approval.'}])
-        self.assertEqual(self.bash('git commit -m "Gate gh pr merge behind approval"').returncode, 0)
-        self.assertEqual(self.bash("gh pr create --body 'never gh pr merge directly'").returncode, 0)
-        heredoc = 'git commit -m "$(cat <<\'EOF\'\nDocs: gh pr merge needs approval\nEOF\n)"'
-        self.assertEqual(self.bash(heredoc).returncode, 0)
-        self.assertEqual(self.bash('gh pr merge 3 --squash').returncode, 2)
-        self.assertEqual(self.bash('cd x && gh pr merge 3').returncode, 2)
-        self.assertEqual(self.bash('bash -c "gh pr merge 3"').returncode, 2)
+        commands = ['gh pr merge 3 --squash', 'cd x && gh pr merge 3',
+                    'bash -c "gh pr merge 3"', 'bash -lc "gh pr merge 3"',
+                    'echo "$(gh pr merge 3)"', 'echo "`gh pr merge 3`"',
+                    "bash <<'EOF'\ngh pr merge 3\nEOF"]
+        for command in commands:
+            with self.subTest(command=command):
+                self.assertEqual(self.bash(command).returncode, 2)
+
+    def test_gates_conservatively_match_prose_as_well(self):
+        self.config(gates=[{'match': r'gh pr merge', 'require_env': 'MERGE_OK'}])
+        self.assertEqual(self.bash('git commit -m "Gate gh pr merge behind approval"').returncode, 2)
+        self.assertEqual(self.bash("gh pr create --body 'never gh pr merge directly'").returncode, 2)
 
     def test_gates(self):
         self.config(gates=[

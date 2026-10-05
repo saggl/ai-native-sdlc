@@ -19,7 +19,7 @@ text as arguments, never interpolate it as executable shell code.
 | `setup` | Create `.sdlc/project.json` once; preserve existing content |
 | `new <id> --title <title>` | Create a unique change folder, state and intent template |
 | `new <id> --title <title> --adopt` | Register an existing committed `changes/<id>/intent.md` (connector, monitor, scan, Tag) without overwriting it |
-| `lock-tests <id> --paths <path>...` | Hash committed failing/regression tests; later `record-result` refuses if they change |
+| `lock-tests <id> --paths <path>...` | Hash committed failing/regression tests after plan approval; replacing locks requires a revised approved plan |
 | `install <hooks\|monitor>` | Opt-in, only on the user's explicit yes: `hooks` copies the guard to `.claude/hooks/sdlc-guard.py` and merges PreToolUse/PostToolUse entries into `.claude/settings.json`; `monitor` (experimental) copies `ci/monitor.yml` to `.github/workflows/sdlc-monitor.yml` plus `.sdlc/bands.py` and `bands.json`. Never overwrites |
 | `status [id]` | Infer next stage; check saved artifact and evidence fingerprints; may report `workflow_changed: true` |
 | `draft <id> spec` / `draft <id> plan` | Create the next template after prior decisions |
@@ -75,12 +75,16 @@ identity nor parses comments: the agent inspects sources through available tools
   to hide changes. Records store revisions and hashes, not authenticated authorization.
   New decisions and results also identify the installed workflow by version and content
   hash. `workflow_changed: true` means installed guidance differs from the guidance that
-  produced the latest record: recheck the decision against current guidance; it is not a
+  produced the latest record for a stage or result: recheck and re-record affected
+  decisions/results against current guidance; historical records do not keep the warning
+  active. It is not a
   missing approval. Legacy records remain readable but do not establish which workflow
   produced them.
 - Plan text from `## Implementation deviations` to the end is outside the plan approval
   snapshot. Optional `project.json` keys used by the guard: `protected_paths` (globs),
   `gates` (`[{match, require_env, action: block|ask, reason}]`), `commands.format` (argv).
+  Gate regexes match the full Bash command, including quoted text and heredocs. They
+  may also flag prose mentioning a gated command; they are not a shell parser or sandbox.
 - Commit implementation before final verification and result recording, with scoped
   staging. Staged and tested content must agree. Evidence-only commits do not invalidate
   results. Preserve unrelated work.
