@@ -43,3 +43,32 @@ class EvalChecksTests(unittest.TestCase):
         failures = evals.check_initial_gate(self.root, self.original)
         self.assertTrue(any('Invented approval' in failure for failure in failures))
         self.assertTrue(any('extra.py' in failure for failure in failures))
+
+
+class LifecycleFixtureTests(unittest.TestCase):
+    def test_lifecycle_fixtures_are_valid_and_do_not_pass_unexecuted_stages(self):
+        for case in evals.scenarios.CASES:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                evals.git(root, 'init')
+                evals.git(root, 'config', 'user.name', 'Fixture')
+                evals.git(root, 'config', 'user.email', 'fixture@example.invalid')
+                task, protected = evals.scenarios.prepare(root, case, evals.sdlc)
+                self.assertIn('Synthetic', task.title())
+                failures = evals.scenarios.check(root, case, protected, evals.sdlc)
+                if case == 'stale-spec':
+                    # Correct behavior here is preserving the already-blocked state.
+                    self.assertEqual(failures, [])
+                else:
+                    self.assertTrue(failures, 'An unexecuted lifecycle stage must not pass')
+
+    def test_observation_checker_rejects_false_success_before_window(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evals.git(root, 'init')
+            evals.git(root, 'config', 'user.name', 'Fixture')
+            evals.git(root, 'config', 'user.email', 'fixture@example.invalid')
+            _, protected = evals.scenarios.prepare(root, 'observation-pending', evals.sdlc)
+            (root / 'changes/fixture/learning.md').write_text('# Learning\nPretended window elapsed.\n')
+            evals.sdlc.record_result(root, 'fixture', 'learning', 'passed', 'changes/fixture/learning.md')
+            self.assertTrue(evals.scenarios.check(root, 'observation-pending', protected, evals.sdlc))

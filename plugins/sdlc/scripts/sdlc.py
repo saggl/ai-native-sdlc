@@ -1,6 +1,6 @@
 """Local workflow bookkeeping. Records evidence; never authenticates or grants approval.
 
-Python 3.10+, standard library only. No network calls or product commands are run.
+Python 3.10+, standard library only. No network calls are made. Only record-regression runs an explicit project check.
 """
 import argparse
 from datetime import datetime, timezone
@@ -131,7 +131,7 @@ def copy_template(root, folder, name, title):
         out.write(text.replace('[[SDLC_TITLE]]', title))
 
 
-def new(root, slug, title, adopt=False):
+def new(root, slug, title, kind="change", adopt=False):
     folder = change_dir(root, slug)
     if adopt:
         # Intake from a connector, monitor, scan or channel: keep its committed intent.
@@ -146,7 +146,8 @@ def new(root, slug, title, adopt=False):
     except ValueError:
         head = None  # New repositories are supported before their first commit.
     data = {'schema': 1, 'id': slug, 'title': title, 'created_at': now(),
-            'plugin_version': VERSION, 'base_commit': head, 'approvals': [], 'results': []}
+            'plugin_version': VERSION, 'base_commit': head, 'kind': kind,
+            'approvals': [], 'results': []}
     save(root, folder, data)
     if not adopt:
         copy_template(root, folder, 'intent', title)
@@ -310,6 +311,59 @@ def require_committed_code(root):
         raise ValueError('Commit staged product changes before recording evidence')
 
 
+def regression_valid(root, folder, data):
+    record = data.get('regression')
+    if not record:
+        return data.get('kind', 'change') != 'bugfix'
+    try:
+        return (record['artifacts'] == artifact_snapshot(root, folder, 'plan')
+                and all(file_digest(root, path) == digest for path, digest in record['tests'].items())
+                and record['report_sha'] == file_digest(root, record['report']))
+    except FileNotFoundError:
+        return False
+
+
+def record_regression(root, slug, files, command, expected_exit=1):
+    folder, data = state(root, slug)
+    if data.get('closed_at'):
+        raise ValueError('This change is complete')
+    require_approvals(root, folder, data, STAGES)
+    require_committed_code(root)
+    if not files or not isinstance(command, list) or not command or not all(isinstance(x, str) and x for x in command):
+        raise ValueError('Provide test files and an explicit command argument list')
+    if expected_exit <= 0:
+        raise ValueError('Expected failure must be a positive exit code')
+    snapshot = artifact_snapshot(root, folder, 'plan')
+    previous = data.get('regression')
+    if previous and previous['artifacts'] == snapshot:
+        raise ValueError('Regression already recorded; changing its scope requires a revised approved plan')
+    tests = {}
+    for name in files:
+        path = safe_path(root, name)
+        if path.relative_to(root).parts[0] in (config(root)['changes_dir'], '.sdlc'):
+            raise ValueError('Regression files must be product tests, not lifecycle records')
+        git(root, 'ls-files', '--error-unmatch', '--', name)
+        tests[Path(name).as_posix()] = file_digest(root, name)
+    observed = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=120)
+    if observed.returncode != expected_exit:
+        raise ValueError(f'Expected regression exit {expected_exit}, observed {observed.returncode}; no record saved')
+    require_committed_code(root)
+    if any(file_digest(root, path) != digest for path, digest in tests.items()):
+        raise ValueError('Regression command changed protected tests')
+    report = folder.relative_to(root) / 'regression.md'
+    text = ('# Failing regression check\n\nRevision: ' + git(root, 'rev-parse', 'HEAD').decode().strip()
+            + '\n\nCommand argv: ' + json.dumps(command) + '\nExit: ' + str(observed.returncode)
+            + '\n\nstdout:\n```text\n' + observed.stdout + '\n```\n\nstderr:\n```text\n'
+            + observed.stderr + '\n```\n')
+    safe_path(root, report).write_text(text, encoding='utf-8')
+    data['regression'] = {'commit': git(root, 'rev-parse', 'HEAD').decode().strip(),
+                          'tests': tests, 'command': command, 'exit_code': observed.returncode,
+                          'report': report.as_posix(), 'report_sha': file_digest(root, report),
+                          'artifacts': snapshot, 'workflow': workflow_provenance(), 'recorded_at': now()}
+    save(root, folder, data)
+    return data['regression']
+
+
 def result_valid(root, folder, data, kind, code):
     records = [r for r in data['results'] if r['kind'] == kind]
     if not records:
@@ -317,6 +371,8 @@ def result_valid(root, folder, data, kind, code):
     last = records[-1]
     try:
         return (last['outcome'] == 'passed' and last['code'] == code
+                and regression_valid(root, folder, data)
+                and last.get('regression') == data.get('regression')
                 and last['artifacts'] == artifact_snapshot(root, folder, 'plan')
                 and last['report_sha'] == file_digest(root, last['report'])
                 and last['prerequisites'] == prerequisite_snapshot(data, kind))
@@ -331,34 +387,11 @@ def prerequisite_snapshot(data, kind):
             if any(r['kind'] == previous for r in data['results'])}
 
 
-def lock_tests(root, slug, paths):
-    """Record committed regression tests so a fix cannot weaken them unnoticed."""
-    folder, data = state(root, slug)
-    if data.get('closed_at'):
-        raise ValueError('This change is complete; create a new change for follow-up work')
-    require_approvals(root, folder, data, STAGES)
-    for path in paths:
-        git(root, 'ls-files', '--error-unmatch', '--', path)
-    if git(root, 'diff', 'HEAD', '--', *paths):
-        raise ValueError('Commit the failing tests before locking them')
-    tests = {Path(p).as_posix(): file_digest(root, p) for p in paths}
-    snapshot = artifact_snapshot(root, folder, 'plan')
-    previous = data.get('locked_tests', {})
-    if previous and previous != tests:
-        if not data.get('locked_tests_plan'):
-            raise ValueError('Legacy test locks cannot be replaced; create a new change')
-        if data['locked_tests_plan'] == snapshot:
-            raise ValueError('Changing test locks requires a revised approved plan')
-    data['locked_tests'] = tests
-    data['locked_tests_plan'] = snapshot
-    save(root, folder, data)
-    return {'locked_tests': data['locked_tests']}
-
-
 def require_locked_tests(root, data):
+    # Read-only compatibility for projects that used the earlier lock-only records.
     for path, digest in data.get('locked_tests', {}).items():
         if file_digest(root, path, required=False) != digest:
-            raise ValueError(f'Locked test changed: {path}; fix the code, or ask the owner to re-lock')
+            raise ValueError(f'Locked test changed: {path}; preserve the test or start a new owner-reviewed change')
 
 
 def record_result(root, slug, kind, outcome, report):
@@ -366,6 +399,8 @@ def record_result(root, slug, kind, outcome, report):
     if data.get('closed_at'):
         raise ValueError('This change is complete; create a new change for follow-up work')
     require_approvals(root, folder, data, STAGES)
+    if outcome == 'passed' and not regression_valid(root, folder, data):
+        raise ValueError('Missing or changed protected regression; reproduce before fixing and preserve the tests')
     # Reports belong to this change, so writing them does not invalidate the code digest.
     expected = folder.relative_to(root) / (kind + '.md')
     if Path(report) != expected:
@@ -375,7 +410,8 @@ def record_result(root, slug, kind, outcome, report):
     if not text.strip() or '[[SDLC_TITLE]]' in text or '<!-- SDLC:' in text:
         raise ValueError('Replace report template prompts with actual evidence')
     require_committed_code(root)
-    require_locked_tests(root, data)
+    if outcome == 'passed':
+        require_locked_tests(root, data)
     code = code_snapshot(root)
     for previous in RESULTS[:RESULTS.index(kind)]:
         if not result_valid(root, folder, data, previous, code):
@@ -384,7 +420,7 @@ def record_result(root, slug, kind, outcome, report):
               'report_sha': report_sha, 'code': code, 'recorded_at': now(),
               'commit': git(root, 'rev-parse', 'HEAD').decode().strip(),
               'artifacts': artifact_snapshot(root, folder, 'plan'),
-              'workflow': workflow_provenance(),
+              'workflow': workflow_provenance(), 'regression': data.get('regression'),
               'prerequisites': prerequisite_snapshot(data, kind)}
     data['results'].append(record)
     if kind == 'learning' and outcome == 'passed':
@@ -496,6 +532,7 @@ def main():
     command = commands.add_parser('new')
     command.add_argument('id')
     command.add_argument('--title', required=True, type=nonempty)
+    command.add_argument('--kind', choices=('change', 'bugfix'), default='change')
     command.add_argument('--adopt', action='store_true', help='Track an existing committed intent.md')
     command = commands.add_parser('status')
     command.add_argument('id', nargs='?')
@@ -507,14 +544,16 @@ def main():
     command.add_argument('stage', choices=STAGES)
     for flag in ('by', 'evidence', 'decision'):
         command.add_argument('--' + flag, required=True, type=nonempty)
+    command = commands.add_parser('record-regression')
+    command.add_argument('id')
+    command.add_argument('--file', action='append', required=True)
+    command.add_argument('--command-json', required=True)
+    command.add_argument('--expected-exit', type=int, default=1)
     command = commands.add_parser('record-result')
     command.add_argument('id')
     command.add_argument('kind', choices=RESULTS)
     command.add_argument('--outcome', choices=('passed', 'blocked'), required=True)
     command.add_argument('--report', required=True)
-    command = commands.add_parser('lock-tests')
-    command.add_argument('id')
-    command.add_argument('--paths', nargs='+', required=True)
     command = commands.add_parser('install')
     command.add_argument('name', choices=('hooks', 'monitor'))
     args = parser.parse_args()
@@ -523,21 +562,24 @@ def main():
         if args.command == 'setup':
             result = setup(root)
         elif args.command == 'new':
-            result = new(root, args.id, args.title, args.adopt)
+            result = new(root, args.id, args.title, kind=args.kind, adopt=args.adopt)
         elif args.command == 'status':
             result = status(root, args.id) if args.id else all_status(root)
         elif args.command == 'draft':
             result = draft(root, args.id, args.stage)
         elif args.command == 'record-approval':
             result = record_approval(root, args.id, args.stage, args.by, args.evidence, args.decision)
-        elif args.command == 'lock-tests':
-            result = lock_tests(root, args.id, args.paths)
+        elif args.command == 'record-regression':
+            command = json.loads(args.command_json)
+            if not isinstance(command, list):
+                raise ValueError('command-json must be a JSON argument list')
+            result = record_regression(root, args.id, args.file, command, args.expected_exit)
         elif args.command == 'install':
             result = install(root, args.name)
         else:
             result = record_result(root, args.id, args.kind, args.outcome, args.report)
         print(json.dumps(result, indent=2, ensure_ascii=False))
-    except (ValueError, OSError, KeyError, TypeError) as exc:
+    except (ValueError, OSError, KeyError, TypeError, subprocess.TimeoutExpired) as exc:
         parser.exit(1, f'SDLC: {exc}\n')
 
 

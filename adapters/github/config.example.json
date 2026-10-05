@@ -1,0 +1,11 @@
+{
+  "command": ["claude", "-p"],
+  "operators": ["replace-with-github-login"],
+  "owners": {
+    "intent": ["replace-with-product-owner-login"],
+    "spec": ["replace-with-domain-owner-login"],
+    "plan": ["replace-with-engineer-login"]
+  },
+  "max_fix_attempts": 2,
+  "timeout_seconds": 900
+}

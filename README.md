@@ -81,9 +81,10 @@ Project context lives in `.sdlc/project.json`; decisions and evidence in `change
 Local records detect stale content, but do not authenticate approvals. Existing CI and
 release controls still apply; unavailable required checks stay pending.
 
-This is a guided workflow, not an autonomous runner. Hooks and monitoring are opt-in
-(see [playbook coverage](docs/guide.md#playbook-coverage)); nothing is active by default, and
-it does not authenticate reviewers or deploy your project. Start with a small change and adapt the
+The core is a guided workflow. An [optional GitHub adapter](adapters/github/README.md)
+can resume after linked owner decisions and run bounded review/fix cycles.
+Hooks and monitoring are [opt-in](docs/guide.md#playbook-coverage); installing the core
+does not enable automation or deployment access. Start with a small change and adapt the
 decision owners to your team's existing policy.
 
 [Setup and maintenance](docs/guide.md) ·
