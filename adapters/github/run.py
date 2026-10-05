@@ -117,7 +117,7 @@ def check_saved_decisions(api, root, number, slug, config):
     folder, data = sdlc.state(root, slug)
     for stage in sdlc.STAGES:
         if not sdlc.approval_valid(root, folder, data, stage):
-            break
+            continue
         record = [r for r in data['approvals'] if r['stage'] == stage][-1]
         links = re.findall(r'https://github\.com/[^\s]+#issuecomment-[0-9]+', record['evidence'])
         if len(links) != 2:
@@ -153,15 +153,20 @@ def run_stage(root, slug, config, prompt, review, invoke):
     folder, before = sdlc.state(root, slug)
     fixed = ('approvals', 'closed_at')
     if review:
-        fixed += ('regression',)
+        fixed += ('regression', 'required_approvals', 'decision_after', 'decision_reasons')
     protected = {key: before.get(key) for key in fixed}
     allowed = 'review' if review else 'verification'
+    gates = set(sdlc.required_stages(root, before))
     records = [r for r in before['results'] if r['kind'] != allowed]
     artifacts = sdlc.artifact_snapshot(root, folder, 'plan') if review else None
     plan = sdlc.file_digest(root, folder.relative_to(root) / 'plan.md') if review else None
     invoke(root, config['command'], prompt, config['timeout_seconds'], review=review)
     folder, after = sdlc.state(root, slug)
-    if ({key: after.get(key) for key in fixed} != protected
+    if (any(after.get('decision_after', {}).get(stage, -1) < value
+            for stage, value in before.get('decision_after', {}).items())
+            or not gates.issubset(sdlc.required_stages(root, after))
+            or (review and sdlc.required_stages(root, after) != sdlc.required_stages(root, before))
+            or {key: after.get(key) for key in fixed} != protected
             or [r for r in after['results'] if r['kind'] != allowed] != records):
         raise ValueError('Agent changed decisions or results outside its stage; no changes published')
     if review and (sdlc.artifact_snapshot(root, folder, 'plan') != artifacts or
@@ -293,7 +298,7 @@ def main():
             check_saved_decisions(api, root, number, slug, config)
             baseline_code = sdlc.code_snapshot(root)
             baseline_approved = all(sdlc.approval_valid(root, *sdlc.state(root, slug), stage)
-                                    for stage in sdlc.STAGES)
+                                    for stage in sdlc.required_stages(root, sdlc.state(root, slug)[1]))
             if request and request[1] == 'review' and sdlc.status(root, slug)['next'] != 'review':
                 raise ValueError('Change is not ready for fresh review')
             if review is not None:
@@ -348,6 +353,10 @@ def main():
             if next_action.startswith('approve-'):
                 stage = next_action.removeprefix('approve-')
                 path = (folder.relative_to(root) / (stage + '.md')).as_posix()
+                if stage == 'plan':
+                    body += '\n\nPlan approval covers intent.md, spec.md and plan.md at this revision.'
+                    for upstream in ('intent', 'spec'):
+                        body += '\nhttps://github.com/' + repository + '/blob/' + head + '/' + (folder.relative_to(root) / (upstream + '.md')).as_posix()
                 body += ('\n\nReview https://github.com/' + repository + '/blob/' + head + '/' + path
                          + '\n\nReply with `' + stage.title() + ' approved <this-comment-url>`.'
                          + '\n\n<!-- sdlc:gate ' + json.dumps({'id': slug, 'stage': stage, 'commit': head, 'path': path}) + ' -->')

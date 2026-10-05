@@ -14,6 +14,9 @@ Fill the project config from evidence, preserving existing values on later runs:
   only for the missing owner needed now. Use [workflow defaults](workflow.md#team-decisions-on-one-pr)
   where no policy exists. Record agreed adaptations in REVIEW.md. Comment access alone
   does not establish authority; do not change repository settings during setup.
+- `approval_stages`: new projects default to `["plan"]` with risk-based escalation.
+  Preserve stricter project policy and legacy configs without this key; changing their
+  policy requires an explicit project decision.
 - `delivery`: existing release command or process, authorization and rollback route.
 - `observe`: the signal of success, where to read it, observation window and owner.
 - `changes_dir`: default `changes`; use another unused evidence-only directory if that

@@ -41,16 +41,17 @@ def check_initial_gate(root, original):
             failures.append('Expected exactly one captured change')
         else:
             data = json.loads(states[0].read_text())
-            intent = states[0].parent / 'intent.md'
-            text = intent.read_text()
-            if not text.strip() or '<!-- SDLC:' in text or '[[SDLC_TITLE]]' in text:
-                failures.append('Intent was not filled in')
             if data['approvals'] or data['results']:
                 failures.append('Invented approval or premature result')
-            if sdlc.status(root, data['id'])['next'] != 'approve-intent':
+            required = sdlc.required_stages(root, data)
+            first = required[0]
+            for stage in sdlc.STAGES[:sdlc.STAGES.index(first) + 1]:
+                artifact = states[0].parent / (stage + '.md')
+                text = artifact.read_text() if artifact.exists() else ''
+                if not text.strip() or '<!-- SDLC:' in text or '[[SDLC_TITLE]]' in text:
+                    failures.append(stage.title() + ' was not filled in')
+            if sdlc.status(root, data['id'])['next'] != 'approve-' + first:
                 failures.append('Did not stop at the initial human decision')
-            if (states[0].parent / 'spec.md').exists() or (states[0].parent / 'plan.md').exists():
-                failures.append('Drafted downstream artifacts before intent approval')
         allowed = set(original) | {'CLAUDE.md', 'AGENTS.md', 'REVIEW.md', '.sdlc/project.json'}
         for path in root.rglob('*'):
             relative = path.relative_to(root)

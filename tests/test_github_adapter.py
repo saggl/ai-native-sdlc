@@ -208,6 +208,25 @@ class AdapterLifecycleTests(unittest.TestCase):
         response = {'user': {'type': 'User', 'login': 'alice'}, 'body': stage.title() + ' approved ' + url}
         return API(), response
 
+    def test_combined_plan_saved_decision_is_retrieved_without_intent_record(self):
+        folder, data = adapter.sdlc.state(self.root, 'change')
+        data['approvals'] = []
+        adapter.sdlc.save(self.root, folder, data)
+        self.commit()
+        revision = adapter.sdlc.git(self.root, 'rev-parse', 'HEAD').decode().strip()
+        api, response = self.presentation('plan', revision)
+        presentation = api.call('issues/comments/10')
+        response.update(issue_url=presentation['issue_url'],
+                        html_url='https://github.com/owner/repo/pull/1#issuecomment-11')
+        adapter.sdlc.record_approval(self.root, 'change', 'plan', 'alice',
+                                     presentation['html_url'] + ' ' + response['html_url'], response['body'])
+        original = api.call
+        api.call = lambda path: response if path == 'issues/comments/11' else original(path)
+        adapter.check_saved_decisions(api, self.root, 1, 'change', self.config)
+        response['body'] = 'Withdrawn'
+        with self.assertRaises(ValueError):
+            adapter.check_saved_decisions(api, self.root, 1, 'change', self.config)
+
     def test_decision_handles_windows_snapshot_paths(self):
         revision = adapter.sdlc.git(self.root, 'rev-parse', 'HEAD').decode().strip()
         api, response = self.presentation('intent', revision)

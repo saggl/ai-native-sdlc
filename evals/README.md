@@ -6,8 +6,8 @@
 
 | Case | Required behavior |
 | --- | --- |
-| Empty repository | Filled intent; stop before approval or application scaffolding |
-| Existing project | Preserve code/rules; capture intent and stop |
+| Empty repository | Filled intent/spec/plan; stop at combined approval before application scaffolding |
+| Existing project | Preserve code/rules; draft routine artifacts and stop at plan approval |
 | Resume accepted intent | Draft spec using saved decision evidence; do not invent its approval |
 | Changed spec after plan approval | Return to the stale spec decision before implementation |
 | Missing target/HIL evidence | Record verification blocked; host checks are insufficient |
@@ -17,7 +17,7 @@
 | Observation pending | A future observation window cannot be reported complete |
 | Observed outcome | Record the supplied completed observation, triage and close |
 
-The later-stage fixtures contain explicitly labelled synthetic human decisions and,
+The later-stage fixtures use an explicit three-gate project policy and contain explicitly labelled synthetic human decisions and,
 where needed, synthetic review/delivery inputs. They exercise lifecycle transitions;
 they do not authenticate real people or prove deployment. Checks inspect saved state,
 reports and product/test preservation, rather than accepting the agent's final message.

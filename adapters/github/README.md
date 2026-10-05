@@ -36,6 +36,9 @@ privileged runner with untrusted jobs. Repository rules remain the final merge a
   `Intent approved https://github.com/owner/repo/pull/123#issuecomment-456`.
   Paste the **presentation comment's** URL. This extra link is required because GitHub
   conversation comments do not provide an unambiguous reply-to relationship.
+- A routine `Plan approved` decision covers the presented intent, spec and plan.
+  Earlier intent/spec replies are needed only when required by project policy or risk
+  escalation. The combined owner must have authority across those decisions.
 - That reply verifies the live author, authority, presented revision and policy content,
   records the decision and advances to the next gate automatically.
 - Saved GitHub decisions are re-fetched before execution and publication. Chat-only or

@@ -22,6 +22,7 @@ text as arguments, never interpolate it as executable shell code.
 | `install <hooks\|monitor>` | Opt-in, only on the user’s explicit yes; install the guard or experimental monitor without overwriting files |
 | `status [id]` | Infer next stage; check saved artifact and evidence fingerprints; may report `workflow_changed: true` |
 | `draft <id> spec` / `draft <id> plan` | Create the next template after prior decisions |
+| `require-decision <id> <intent\|spec\|plan> --reason <reason>` | Add an earlier human gate for ambiguity or significant risk; never removes gates |
 | `record-approval <id> <intent\|spec\|plan> --by <human> --evidence <reference> --decision <exact-decision>` | Record a real human decision on committed artifacts |
 | `record-regression <id> --file <test-path> --command-json <argv> [--expected-exit 1]` | Observe a failing committed check and protect its test files |
 | `record-result <id> <verification\|review\|delivery\|learning> --outcome <passed\|blocked> --report <relative-path>` | Bind a report to the code and upstream artifacts |
@@ -43,7 +44,25 @@ owner needed now. Default team merge requires one teammate and passing required 
 release follows the existing release authority. Notifications and review requests require
 authorization.
 
-At each intent/spec/plan gate:
+New projects use `approval_stages: ["plan"]`: draft concise intent, spec and plan,
+then present all three together for one `Plan approved` decision. That decision binds
+all three artifacts; it does not fabricate separate intent/spec approvals. Its owner
+must have authority for the outcome, behavior and approach; involve the applicable
+owners when one person cannot make all those decisions.
+
+Before drafting onward, assess ambiguity and risk. For unresolved outcomes, behavior,
+scope, security, public contracts, migrations or significant architecture changes, use
+`require-decision` at the affected intent/spec stage with a concrete reason, then ask
+that owner. Put the concern in the artifact. Do not implement while it is unresolved.
+Escalation is additive and survives resume. Plan approval remains mandatory before code.
+Material departures return to the affected decision; never silently classify them as routine.
+
+Project policy can require `approval_stages: ["intent", "spec", "plan"]` or just spec
+and plan. Configurations without this key retain the original three-gate policy; do
+not migrate them without an explicit project decision. The helper records gates and
+snapshots, but the agent must judge risk and verify actual authority and resolution.
+
+At each required gate:
 
 1. Commit the artifact. Persist a presentation in the PR or durable decision record
    containing change ID, stage, path, full commit SHA and revision-pinned artifact link.
@@ -68,7 +87,8 @@ identity nor parses comments: the agent inspects sources through available tools
 
 ## Rules shared by every stage
 
-- Keep artifacts short and create only the next needed one. Link authoritative sources.
+- Keep artifacts short and create the next needed one; routine preparation may draft
+  all three before presenting the combined decision. Link authoritative sources.
   Work on one change per worktree/session; never overwrite another session's state.
 - Artifact/policy changes invalidate affected downstream records. Code, report or earlier
   result changes invalidate affected results. Preserve history; never repair fingerprints
