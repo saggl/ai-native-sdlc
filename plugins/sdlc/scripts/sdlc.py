@@ -192,9 +192,11 @@ def workflow_provenance():
 
 def workflow_changed(data):
     # Legacy records predate provenance; the version alone is not compared.
-    records = [r for r in data['approvals'] + data['results'] if 'workflow' in r]
+    latest = {('approval', r['stage']): r for r in data['approvals']}
+    latest.update({('result', r['kind']): r for r in data['results']})
     current = workflow_provenance()['sha256']
-    return any(r['workflow'].get('sha256') != current for r in records)
+    return any(r['workflow'].get('sha256') != current
+               for r in latest.values() if 'workflow' in r)
 
 
 def approval_valid(root, folder, data, stage):
@@ -334,11 +336,21 @@ def lock_tests(root, slug, paths):
     folder, data = state(root, slug)
     if data.get('closed_at'):
         raise ValueError('This change is complete; create a new change for follow-up work')
+    require_approvals(root, folder, data, STAGES)
     for path in paths:
         git(root, 'ls-files', '--error-unmatch', '--', path)
     if git(root, 'diff', 'HEAD', '--', *paths):
         raise ValueError('Commit the failing tests before locking them')
-    data.setdefault('locked_tests', {}).update({Path(p).as_posix(): file_digest(root, p) for p in paths})
+    tests = {Path(p).as_posix(): file_digest(root, p) for p in paths}
+    snapshot = artifact_snapshot(root, folder, 'plan')
+    previous = data.get('locked_tests', {})
+    if previous and previous != tests:
+        if not data.get('locked_tests_plan'):
+            raise ValueError('Legacy test locks cannot be replaced; create a new change')
+        if data['locked_tests_plan'] == snapshot:
+            raise ValueError('Changing test locks requires a revised approved plan')
+    data['locked_tests'] = tests
+    data['locked_tests_plan'] = snapshot
     save(root, folder, data)
     return {'locked_tests': data['locked_tests']}
 

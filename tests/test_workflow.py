@@ -92,6 +92,20 @@ class WorkflowTests(unittest.TestCase):
             (copy / 'references/stages.md').write_text('changed\n')
             self.assertNotEqual(module.workflow_provenance()['sha256'], before)
 
+    def test_workflow_warning_clears_after_current_records_are_rechecked(self):
+        self.prepare()
+        self.result('verification')
+        self.commit()
+        with patch.object(sdlc, 'workflow_provenance', return_value={'version': 'x', 'sha256': 'changed'}):
+            self.assertTrue(sdlc.status(self.root, 'csv-import')['workflow_changed'])
+            for stage in sdlc.STAGES:
+                sdlc.record_approval(self.root, 'csv-import', stage, 'Owner', 'rechecked', 'Approved.')
+                self.commit()
+            self.assertTrue(sdlc.status(self.root, 'csv-import')['workflow_changed'])
+            self.result('verification')
+            self.assertNotIn('workflow_changed', sdlc.status(self.root, 'csv-import'))
+            self.assertGreater(len(sdlc.state(self.root, 'csv-import')[1]['approvals']), 3)
+
     def test_status_hashes_code_once_for_all_changes(self):
         sdlc.new(self.root, 'second', 'Second')
         for slug in ('csv-import', 'second'):
@@ -127,6 +141,48 @@ class WorkflowTests(unittest.TestCase):
         (self.root / 'test_app.py').write_text('assert value == 2\n')
         self.commit()
         self.assertEqual(self.result('verification')['outcome'], 'passed')
+
+    def test_test_locks_cannot_be_replaced_without_revised_plan(self):
+        (self.root / 'test_app.py').write_text('assert False\n')
+        self.prepare()
+        original = sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        self.assertEqual(sdlc.lock_tests(self.root, 'csv-import', ['test_app.py']), original)
+        self.commit()
+        (self.root / 'test_app.py').write_text('assert True\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'revised approved plan'):
+            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        with self.assertRaisesRegex(ValueError, 'Locked test changed'):
+            self.result('verification')
+        (self.folder / 'plan.md').write_text('# Plan\nOwner-approved new regression scope.\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'stale recorded plan'):
+            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        sdlc.record_approval(self.root, 'csv-import', 'plan', 'Owner', 'revised plan', 'Approved new scope.')
+        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        self.commit()
+        self.assertEqual(self.result('verification')['outcome'], 'passed')
+
+    def test_test_locks_cannot_be_extended_under_same_plan(self):
+        (self.root / 'test_app.py').write_text('assert False\n')
+        (self.root / 'test_other.py').write_text('assert False\n')
+        self.prepare()
+        sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'revised approved plan'):
+            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py', 'test_other.py'])
+
+    def test_legacy_test_locks_remain_protected(self):
+        (self.root / 'test_app.py').write_text('assert False\n')
+        self.prepare()
+        folder, data = sdlc.state(self.root, 'csv-import')
+        data['locked_tests'] = {'test_app.py': sdlc.file_digest(self.root, 'test_app.py')}
+        sdlc.save(self.root, folder, data)
+        self.commit()
+        (self.root / 'test_app.py').write_text('assert True\n')
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'Legacy test locks'):
+            sdlc.lock_tests(self.root, 'csv-import', ['test_app.py'])
 
     def test_adopt_existing_intent_without_overwriting(self):
         folder = self.root / 'changes/from-monitor'

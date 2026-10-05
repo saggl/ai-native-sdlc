@@ -61,22 +61,16 @@ def check_edit(root, config, tool_input):
         change = locked_by(root, config, rel)
         if change:
             block(f'{rel} is locked by change {change}; tests must not be weakened during the fix. '
-                  f'Unlock by closing the change or ask its owner.')
+                  f'Change test scope only through a revised approved plan, or close the change.')
     text = new_text(tool_input)
     if any(re.search(pattern, text) for pattern in SECRETS):
         block('Content looks like a secret or private key. Remove it and read it from the '
               'environment or a secret manager instead.')
 
 
-def executable_text(command):
-    """Drop heredoc bodies and quoted prose (commit messages, PR bodies) before matching."""
-    # ponytail: lexical, not a shell parser; quoted payloads of `-c` and `eval` stay matched.
-    command = re.sub(r"<<-?\s*['\"]?(\w+)['\"]?.*?\n\s*\1\b", ' ', command, flags=re.S)
-    return re.sub(r"""(?<!-c )(?<!eval )("(?:[^"\\]|\\.)*"|'[^']*')""", ' ', command)
-
-
 def check_command(config, command):
-    command = executable_text(command)
+    # Match the complete text: quotes, substitutions and heredocs can contain code.
+    # This is a conservative regex guard, not a shell parser or a sandbox.
     for gate in config.get('gates') or []:
         env = gate.get('require_env', '')
         try:
