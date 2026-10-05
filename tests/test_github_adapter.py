@@ -256,6 +256,20 @@ class AdapterLifecycleTests(unittest.TestCase):
         self.commit()
         self.assertEqual(adapter.decision(api, self.root, 1, response, self.config)[:2], ('change', 'plan'))
 
+    def test_presented_plan_accepts_progress_ticks_but_rejects_task_changes(self):
+        plan = self.folder / 'plan.md'
+        plan.write_text('# Plan\n## Implementation\n- [ ] Add parser\n  Verify: parser tests pass.\n')
+        self.commit()
+        revision = adapter.sdlc.git(self.root, 'rev-parse', 'HEAD').decode().strip()
+        api, response = self.presentation('plan', revision)
+        plan.write_text(plan.read_text().replace('[ ]', '[x]'))
+        self.commit()
+        adapter.decision(api, self.root, 1, response, self.config)
+        plan.write_text(plan.read_text().replace('Add parser', 'Add unrelated API'))
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'stale'):
+            adapter.decision(api, self.root, 1, response, self.config)
+
     def test_repair_includes_inline_only_findings_and_all_pages(self):
         calls = []
         class API:

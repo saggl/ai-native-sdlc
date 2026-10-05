@@ -175,10 +175,26 @@ def file_digest(root, relative, required=True):
     return sha(canonical_content(path.read_bytes()))
 
 
+def decision_content(text, stage):
+    """Progress ticks are bookkeeping; task text and verification remain decisions."""
+    text = text.replace('\r\n', '\n')
+    if stage != 'plan':
+        return text
+    text = text.split(DEVIATIONS, 1)[0]
+    # Normalize only checkbox state in the implementation section, not task content.
+    lines = text.splitlines(keepends=True)
+    implementation = False
+    for index, line in enumerate(lines):
+        if line.startswith('## '):
+            implementation = line.rstrip() == '## Implementation'
+        elif implementation:
+            lines[index] = re.sub(r'^(\s*- )\[[ xX]\]', r'\1[ ]', line)
+    return ''.join(lines)
+
+
 def decided_text(root, folder, stage):
-    """Artifact text under decision; recorded plan deviations follow the decision."""
     text = safe_path(root, folder.relative_to(root) / (stage + '.md')).read_text(encoding='utf-8')
-    return text.split(DEVIATIONS, 1)[0] if stage == 'plan' else text
+    return decision_content(text, stage)
 
 
 def artifact_snapshot(root, folder, stage):

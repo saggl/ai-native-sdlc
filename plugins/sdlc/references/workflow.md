@@ -97,6 +97,9 @@ identity nor parses comments: the agent inspects sources through available tools
   hash. `workflow_changed: true` means installed guidance differs from the guidance that
   produced the latest record for a stage or result: recheck and re-record affected
   decisions/results against current guidance. It is not a missing approval.
+- Plan task checkbox state in `## Implementation` is progress only: changing a tick
+  preserves approval, but task wording, order and verification changes require a new
+  decision. The full plan still binds verification and review evidence.
 - Plan text from `## Implementation deviations` to the end is outside the plan approval
   snapshot; verification and review bind to the full plan so later deviations need fresh
   evidence. Optional `project.json` keys used by the guard: `protected_paths` (globs),
